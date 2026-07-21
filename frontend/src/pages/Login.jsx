@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, setToken, track } from '../lib/auth.js';
+import { toast } from '../components/Toast.jsx';
 
 export default function Login({ onAuth }) {
   const [email, setEmail] = useState('');
@@ -25,9 +26,18 @@ export default function Login({ onAuth }) {
     setBusy(true); setErr(null);
     try {
       const r = await login(email, password, mfaStep ? totp : undefined);
-      if (r.mfaRequired) { setMfaStep(true); setBusy(false); return; }
+      if (r.mfaRequired) {
+        setMfaStep(true); setBusy(false);
+        toast.info('Zwei-Faktor nötig', 'Bitte den Code aus deiner Authenticator-App eingeben.');
+        return;
+      }
+      toast.success('Angemeldet', `Willkommen zurück, ${r.user.email}.`);
       onAuth?.(); nav('/');
-    } catch (e) { setErr(e.message); }
+    } catch (e) {
+      setErr(e.message);
+      toast.error('Anmeldung fehlgeschlagen', e.message,
+        mfaStep ? 'Prüfe, ob der 6-stellige Code noch gültig ist (30 s Fenster).' : 'E-Mail und Passwort prüfen. Nach 5 Fehlversuchen wird das Konto 15 Min gesperrt.');
+    }
     setBusy(false);
   }
 

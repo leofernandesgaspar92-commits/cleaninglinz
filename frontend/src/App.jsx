@@ -9,6 +9,9 @@ import Import from './pages/Import.jsx';
 import AgiTeam from './pages/AgiTeam.jsx';
 import Login from './pages/Login.jsx';
 import Admin from './pages/Admin.jsx';
+import CommandPalette from './components/CommandPalette.jsx';
+import { Toasts, toast } from './components/Toast.jsx';
+import ProgressBar from './components/ProgressBar.jsx';
 import { me, clearToken, track } from './lib/auth.js';
 
 const NAV = [
@@ -30,10 +33,17 @@ export default function App() {
   // Seitenaufrufe für die Nutzungs-Heatmap erfassen.
   useEffect(() => { track(`page${location.pathname.replace(/\//g, '.') || '.home'}`); }, [location.pathname]);
 
-  const logout = () => { clearToken(); setUser(null); };
+  const logout = () => { clearToken(); setUser(null); toast.info('Abgemeldet', 'Du wurdest sicher abgemeldet.'); };
+
+  const paletteActions = user
+    ? [{ id: 'logout', label: 'Abmelden', ico: '🚪', action: logout }]
+    : [{ id: 'login', label: 'Anmelden', ico: '🔑', action: () => (window.location.href = '/login') }];
 
   return (
     <div className="app">
+      <ProgressBar />
+      <CommandPalette actions={paletteActions} />
+      <Toasts />
       <aside className="sidebar">
         <div className="brand">Le<span>co</span></div>
         <div className="tagline">Reinigungs-Imperium · Linz</div>
@@ -63,6 +73,7 @@ export default function App() {
           ) : (
             <NavLink to="/login"><button className="primary" style={{ width: '100%' }}>Anmelden</button></NavLink>
           )}
+          <div className="kbd-hint"><kbd>Strg</kbd>+<kbd>K</kbd> Befehle · <kbd>?</kbd> Hilfe</div>
         </div>
       </aside>
       <main className="main">
