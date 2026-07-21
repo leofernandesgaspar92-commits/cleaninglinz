@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (Migration + Auth-Tests)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: leco
+          POSTGRES_PASSWORD: leco
+          POSTGRES_DB: leco
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U leco"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://leco:leco@localhost:5432/leco
+      JWT_SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Install
+        working-directory: backend
+        run: npm ci
+      - name: Migrate (Schema + Enterprise + Seed)
+        working-directory: backend
+        run: node src/lib/migrate.js --reset --seed
+      - name: Start backend
+        working-directory: backend
+        run: |
+          node src/server.js & echo $! > server.pid
+          curl -s --retry 15 --retry-delay 1 --retry-connrefused http://localhost:4000/api/health
+      - name: Auth end-to-end tests
+        working-directory: backend
+        run: node scripts/test-auth.mjs
+      - name: OpenAPI & Metrics erreichbar
+        run: |
+          curl -sf http://localhost:4000/api/openapi.json > /dev/null
+          curl -sf http://localhost:4000/metrics | grep -q http_requests_total
+      - name: Stop backend
+        if: always()
+        working-directory: backend
+        run: kill "$(cat server.pid)" || true
+
+  frontend:
+    name: Frontend (Build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  agents:
+    name: AGI-Team (Syntax-Check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Install
+        working-directory: agents
+        run: npm ci
+      - name: Syntax-Check
+        working-directory: agents
+        run: for f in $(find src -name '*.js'); do node --check "$f"; done

@@ -43,6 +43,14 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Zusätzliche Indizes für schnelle Abfragen bei großen Datenmengen
   (Jobs nach Kunde/Mitarbeiter, auslaufende Verträge)
 
+### 7. Observability, API-Dokumentation & CI/CD
+- **Prometheus-Metriken** unter `GET /metrics` (Request-Zähler, Latenz-Histogramm,
+  RSS-Speicher, Uptime) – direkt von Prometheus/Grafana scrapebar
+- **OpenAPI 3** unter `GET /api/openapi.json` + interaktive **Swagger UI** unter `/api/docs`
+- **GitHub-Actions-CI** (`.github/workflows/ci.yml`): startet PostgreSQL, migriert
+  (Schema+Enterprise+Seed), fährt das Backend hoch, führt die Auth-E2E-Tests aus,
+  prüft OpenAPI/Metrics und baut das Frontend – bei jedem Push/PR
+
 ## Schnellstart
 
 ```bash
@@ -75,10 +83,10 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 
 - **Elasticsearch** für Volltextsuche über Millionen Dokumente
 - **Redis-Caching** + **Load Balancing** (horizontale Skalierung)
-- **Prometheus + Grafana** (Server-Metriken: CPU/RAM/Antwortzeiten)
+- **Grafana-Dashboards** auf Basis des vorhandenen `/metrics`-Endpunkts
 - **Datev-/Buchhaltungs-API**, **Outlook/Exchange-Kalender**, **Slack/Teams**
 - **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)
-- **CI/CD** (GitHub Actions, Staging/Prod), **Swagger/OpenAPI**-Doku
+- **CD** (Deployment nach Staging/Prod – CI ist bereits vorhanden)
 - **Native Windows-Paketierung** (Electron/MSIX) bzw. PWA-Installierbarkeit
 - **KI-Vertragsanalyse** (Kündigungsfristen/Preise automatisch extrahieren) im Merger-Modul
 ```
