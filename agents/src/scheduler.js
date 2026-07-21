@@ -11,9 +11,11 @@
 // ============================================================================
 import cron from 'node-cron';
 import { WORKFLOWS } from './workflows/index.js';
+import { iterate } from './loop.js';
 import { isLive } from './core/llm.js';
 
 let running = false;
+let loopIter = 0;
 
 async function fire(name) {
   if (running) { log(`⏭  ${name} übersprungen (anderer Lauf aktiv)`); return; }
@@ -34,6 +36,17 @@ function log(msg) {
 }
 
 log(`Leco AGI Team Scheduler gestartet (${isLive() ? 'LIVE' : 'SIMULATION'}).`);
+
+// Autonome Verbesserungsschleife – der Daueransatz: alle 10 Minuten ein Zyklus
+// (analysieren → Lösungen finden → verbessern → ausführen → lernen → repeat).
+async function fireLoop() {
+  if (running) return;
+  running = true;
+  try { loopIter += 1; const r = await iterate(loopIter); log(`↻ Loop #${r.iteration} – ${r.applied} ausgeführt, ${r.openApprovals} Freigaben offen`); }
+  catch (e) { log(`✗ Loop fehlgeschlagen: ${e.message}`); }
+  finally { running = false; }
+}
+cron.schedule('*/10 * * * *', fireLoop);
 
 cron.schedule('0 6 * * *',  () => fire('daily_standup'));
 cron.schedule('0 8 * * 1',  () => fire('market_intelligence'));

@@ -11,9 +11,10 @@
 import { WORKFLOWS, WORKFLOW_KEYS } from './workflows/index.js';
 import { TaskBoard, Approvals } from './core/comms.js';
 import { isLive } from './core/llm.js';
+import { runLoop } from './loop.js';
 import { pool } from './core/db.js';
 
-const [cmd, arg] = process.argv.slice(2);
+const [cmd, arg, arg2] = process.argv.slice(2);
 
 async function main() {
   if (!cmd || cmd === 'list') {
@@ -34,6 +35,12 @@ async function main() {
     if (!a.length) return console.log('Keine offenen Freigaben.');
     console.log(`Offene Freigaben (${a.length}):`);
     for (const x of a) console.log(`  ${x.id}\n    [${x.category}] von ${x.requested_by}: ${x.summary}`);
+    return;
+  }
+
+  if (cmd === 'loop') {
+    // node src/cli.js loop [iterations] [intervalSec]   (0 = unendlich)
+    await runLoop({ iterations: Number(arg ?? 3), intervalSec: Number(arg2 ?? 0) });
     return;
   }
 

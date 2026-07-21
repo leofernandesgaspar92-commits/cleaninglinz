@@ -113,9 +113,16 @@ async function runSimulated({ agent, userPrompt, ctx }) {
   // 3) Human-in-the-Loop demonstrieren: berechtigte Agenten legen eine
   //    Freigabe / einen Code-Vorschlag an (Mensch entscheidet im Dashboard).
   if (agent.tools.includes('propose_code_change')) {
+    // Sicherer Vorschlag: harmlose Notizdatei mit Volltext, damit der
+    // Execute-Schritt echt geschrieben werden kann, ohne Quellcode zu überschreiben.
     await runTool('propose_code_change', {
-      path: 'backend/src/routes/import.js',
-      rationale: 'Beispiel-Vorschlag aus Simulation (Härtung des CSV-Imports).',
+      path: 'agents/IMPROVEMENTS.md',
+      rationale: 'Simulierter Verbesserungsvorschlag: Verbesserungs-Notiz aktualisieren.',
+      new_content:
+        `# Leco – Verbesserungs-Notizen (autogeneriert)\n\n`
+        + `Stand: ${new Date().toISOString()}\n\n`
+        + `Die autonome Verbesserungsschleife hat diese Datei nach menschlicher Freigabe `
+        + `geschrieben und demonstriert damit den Ausführen-Schritt.\n`,
     }, ctx);
     toolCalls.push({ tool: 'propose_code_change', ok: true });
   } else if (agent.tools.includes('request_approval') && agent.approval) {

@@ -56,6 +56,30 @@ Plus `agi.approvals` (Human-in-the-Loop) und `agi.agent_runs` (Audit + Reflexion
 | `bug_bounty` | alle 5 Min | reagiert auf `bug_detected`-Events → Developer → Security |
 | `market_intelligence` | Mo 08:00 | Analyst+Finance → CEO-Bericht |
 
+## Autonome Verbesserungs-Schleife ⭐
+
+Der Kern des Dauerbetriebs: die Agenten überlegen **ständig**, was besser geht —
+*analysieren → neue Lösungen finden → verbessern → ausführen → lernen → wiederholen.*
+
+Jede Iteration (`src/loop.js`):
+1. **ANALYZE** – Architect, QA, Security, UX, Analyst prüfen parallel Code & Daten
+2. **IDEATE** – der CEO wählt die wirkungsvollste Verbesserung und legt eine Aufgabe an
+3. **IMPROVE** – der Developer erzeugt einen konkreten Code-Vorschlag (Freigabe nötig)
+4. **EXECUTE** – **nur vom Menschen freigegebene** Änderungen werden tatsächlich geschrieben
+   (mit Backup unter `agents/.applied-backups/`)
+5. **LEARN** – die Erkenntnis landet in der Knowledge Base und fließt in die nächste Runde
+
+```bash
+node src/cli.js loop 3          # 3 Iterationen
+node src/cli.js loop 0 60       # unendlich, 60 s Abstand
+npm run loop                    # Dauerbetrieb (unendlich, 60 s)
+```
+
+Der Ablauf: der Developer schlägt vor → du genehmigst im Dashboard →
+die **nächste Iteration führt die Änderung aus** (schreibt die Datei). So bewirkt
+die Schleife echte Verbesserungen, ohne die menschliche Kontrolle zu umgehen.
+Der Scheduler fährt die Schleife zusätzlich alle 10 Minuten.
+
 ## Meta-Architektur
 
 - **Selbstreflexion** – jeder Lauf endet mit einer `REFLEXION`, gespeichert in `agi.agent_runs`
@@ -97,6 +121,7 @@ npm run dashboard
 | `node src/cli.js status` | Task Board anzeigen |
 | `node src/cli.js approvals` | offene Freigaben |
 | `node src/cli.js approve\|reject <id>` | Freigabe entscheiden |
+| `node src/cli.js loop [n] [sek]` | Verbesserungs-Schleife n-mal (0 = unendlich) |
 
 ## Architektur
 

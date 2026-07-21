@@ -95,9 +95,25 @@ CREATE TABLE IF NOT EXISTS agi.approvals (
                     CHECK (status IN ('offen','genehmigt','abgelehnt')),
     decided_by    TEXT,                    -- 'human' / Name
     decided_at    TIMESTAMPTZ,
+    applied_at    TIMESTAMPTZ,             -- gesetzt, wenn die Schleife die Änderung ausgeführt hat
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_approvals_status ON agi.approvals(status);
+-- Migration für bestehende Installationen:
+ALTER TABLE agi.approvals ADD COLUMN IF NOT EXISTS applied_at TIMESTAMPTZ;
+
+-- ---------------------------------------------------------------------------
+-- LOOP CYCLES – Protokoll der autonomen Verbesserungsschleife
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS agi.loop_cycles (
+    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    iteration     INTEGER NOT NULL,
+    phase_summary JSONB,                   -- {analyze, ideate, improve, execute}
+    applied_count INTEGER NOT NULL DEFAULT 0,
+    learning      TEXT,
+    started_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    finished_at   TIMESTAMPTZ
+);
 
 -- ---------------------------------------------------------------------------
 -- AGENT RUN LOG – jeder Agenten-Lauf (Audit + Selbstreflexion, lesbar gespeichert)

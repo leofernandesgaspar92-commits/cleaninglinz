@@ -25,16 +25,18 @@ export default function AgiTeam() {
   const [approvals, setApprovals] = useState([]);
   const [knowledge, setKnowledge] = useState([]);
   const [runs, setRuns] = useState([]);
+  const [cycles, setCycles] = useState([]);
   const [wf, setWf] = useState(WORKFLOWS[0]);
   const [busy, setBusy] = useState(false);
+  const [looping, setLooping] = useState(false);
   const [err, setErr] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const [b, a, k, r] = await Promise.all([
-        agiGet('/board'), agiGet('/approvals'), agiGet('/knowledge'), agiGet('/runs'),
+      const [b, a, k, r, c] = await Promise.all([
+        agiGet('/board'), agiGet('/approvals'), agiGet('/knowledge'), agiGet('/runs'), agiGet('/cycles'),
       ]);
-      setBoard(b); setApprovals(a); setKnowledge(k); setRuns(r); setErr(null);
+      setBoard(b); setApprovals(a); setKnowledge(k); setRuns(r); setCycles(c); setErr(null);
     } catch (e) { setErr(e.message); }
   }, []);
 
@@ -50,6 +52,12 @@ export default function AgiTeam() {
     await agiPost(`/approvals/${id}`, { approved });
     load();
   }
+  async function runCycle() {
+    setLooping(true);
+    try { await agiPost('/loop'); await load(); }
+    catch (e) { setErr(e.message); }
+    setLooping(false);
+  }
 
   return (
     <div>
@@ -63,6 +71,9 @@ export default function AgiTeam() {
             {WORKFLOWS.map((w) => <option key={w} value={w}>{w}</option>)}
           </select>
           <button className="primary" onClick={fire} disabled={busy}>{busy ? 'läuft…' : '▶ Workflow starten'}</button>
+          <button onClick={runCycle} disabled={looping} title="analysieren → Lösung → verbessern → ausführen → lernen">
+            {looping ? 'Zyklus läuft…' : '↻ Verbesserungs-Zyklus'}
+          </button>
         </div>
       </div>
 
@@ -122,6 +133,24 @@ export default function AgiTeam() {
             ))}
           </div>
         </div>
+      </div>
+
+      <h3 style={{ marginTop: '1.2rem' }}>↻ Verbesserungs-Zyklen <span className="muted" style={{ fontSize: '.8rem' }}>· analysieren → Lösung → verbessern → ausführen → lernen</span></h3>
+      <div className="card" style={{ padding: '.2rem' }}>
+        <table>
+          <thead><tr><th>#</th><th>Ausgeführt</th><th>Erkenntnis</th><th>Zeit</th></tr></thead>
+          <tbody>
+            {cycles.length === 0 && <tr><td colSpan="4" className="muted">Noch keine Zyklen. Klicke „↻ Verbesserungs-Zyklus".</td></tr>}
+            {cycles.map((c) => (
+              <tr key={c.id}>
+                <td>{c.iteration}</td>
+                <td>{c.applied_count > 0 ? <span className="badge ok">{c.applied_count} ✓</span> : <span className="muted">0</span>}</td>
+                <td style={{ fontSize: '.82rem' }}>{c.learning}</td>
+                <td className="muted" style={{ fontSize: '.75rem' }}>{c.started_at?.slice(11, 19)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

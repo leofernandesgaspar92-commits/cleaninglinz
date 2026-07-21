@@ -6,9 +6,12 @@
 import express from 'express';
 import cors from 'cors';
 import { query } from './core/db.js';
-import { TaskBoard, Approvals, Knowledge } from './core/comms.js';
+import { TaskBoard, Approvals, Knowledge, LoopLog } from './core/comms.js';
 import { WORKFLOWS, WORKFLOW_KEYS } from './workflows/index.js';
+import { iterate } from './loop.js';
 import { isLive } from './core/llm.js';
+
+let loopIter = 0;
 
 const app = express();
 app.use(cors());
@@ -24,6 +27,14 @@ app.get('/api/runs', async (req, res) =>
 app.post('/api/approvals/:id', async (req, res) => {
   const r = await Approvals.decide(req.params.id, req.body.approved === true);
   res.json(r || { error: 'nicht gefunden' });
+});
+
+// Autonome Verbesserungsschleife
+app.get('/api/cycles', async (req, res) => res.json(await LoopLog.recent(20)));
+app.post('/api/loop', async (req, res) => {
+  loopIter += 1;
+  const r = await iterate(loopIter);
+  res.json(r);
 });
 
 // Workflow manuell auslösen

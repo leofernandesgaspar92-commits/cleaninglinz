@@ -109,6 +109,23 @@ export const Approvals = {
       [id, approved ? 'genehmigt' : 'abgelehnt', decidedBy]
     );
   },
+  // Genehmigte, noch nicht ausgeführte Code-Freigaben mit Volltext.
+  approvedUnappliedCode: () => query(
+    `SELECT * FROM agi.approvals
+     WHERE category = 'code_release' AND status = 'genehmigt' AND applied_at IS NULL
+       AND detail ? 'new_content' AND detail->>'new_content' <> '' AND detail->>'new_content' <> '(kein Volltext übergeben)'
+     ORDER BY decided_at`),
+  markApplied: (id) => one('UPDATE agi.approvals SET applied_at = now() WHERE id = $1 RETURNING *', [id]),
+};
+
+// --- LOOP CYCLES ------------------------------------------------------------
+export const LoopLog = {
+  start: (iteration) => one('INSERT INTO agi.loop_cycles (iteration) VALUES ($1) RETURNING *', [iteration]),
+  finish: (id, { phaseSummary, appliedCount, learning }) => one(
+    `UPDATE agi.loop_cycles SET phase_summary=$2, applied_count=$3, learning=$4, finished_at=now()
+     WHERE id=$1 RETURNING *`,
+    [id, JSON.stringify(phaseSummary ?? {}), appliedCount ?? 0, learning ?? null]),
+  recent: (limit = 20) => query('SELECT * FROM agi.loop_cycles ORDER BY started_at DESC LIMIT $1', [limit]),
 };
 
 // --- AGENT RUN LOG ----------------------------------------------------------
