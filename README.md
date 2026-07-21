@@ -32,7 +32,15 @@ db/         PostgreSQL-Schema (schema.sql) + Linz-Seed (seed.sql) + Beispiel-CSV
 backend/    Node/Express REST-API  (Port 4000)
 frontend/   React + Vite + Leaflet (Port 5173)
 mobile/     React Native / Expo    (Reinigungskräfte)
+agents/     Leco AGI Team – Multi-Agenten-System (Port 4100) → agents/README.md
 ```
+
+### Leco AGI Team (optional)
+
+Ein Team aus 10 KI-Agenten, das Leco autonom analysiert und verbessert – mit
+Human-in-the-Loop an allen kritischen Punkten (Code-Release, Übernahme, Budget,
+Strategie). Läuft im Simulationsmodus ohne API-Key, im Live-Modus mit
+`claude-opus-4-8`. Details und Schnellstart: [`agents/README.md`](agents/README.md).
 
 ## Schnellstart
 
