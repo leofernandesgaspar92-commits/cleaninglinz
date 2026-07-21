@@ -65,8 +65,8 @@ Jede Iteration (`src/loop.js`):
 1. **ANALYZE** – Architect, QA, Security, UX, Analyst prüfen parallel Code & Daten
 2. **IDEATE** – der CEO wählt die wirkungsvollste Verbesserung und legt eine Aufgabe an
 3. **IMPROVE** – der Developer erzeugt einen konkreten Code-Vorschlag (Freigabe nötig)
-4. **EXECUTE** – **nur vom Menschen freigegebene** Änderungen werden tatsächlich geschrieben
-   (mit Backup unter `agents/.applied-backups/`)
+4. **EXECUTE** – freigegebene Änderungen werden geschrieben, **verifiziert** und bei
+   Fehler **automatisch zurückgerollt** (Selbstkorrektur; Backup unter `agents/.applied-backups/`)
 5. **LEARN** – die Erkenntnis landet in der Knowledge Base und fließt in die nächste Runde
 
 ```bash
@@ -107,6 +107,20 @@ autonom. Die Policy (`src/core/policy.js`) ist bewusst eng:
   sowie **Budget, Übernahmen, Strategie** – ausnahmslos
 
 Standard ist `false` (jede Änderung braucht den Menschen).
+
+### Selbstkorrektur (Verifikation + Rollback)
+
+Nach dem Schreiben verifiziert der Executor jede Änderung (`src/core/verify.js`):
+`.js` per `node --check`, `.json` per Parse. Schlägt sie fehl, wird die Datei
+**automatisch zurückgerollt** (Backup zurück bzw. neue Datei gelöscht) und ein
+`execute_reverted`-Event ausgelöst – worauf der Developer die Ursache analysiert
+und einen korrigierten Vorschlag erstellt. Optional entscheidet ein projektweiter
+Testbefehl (`AGI_VERIFY_CMD`, z.B. `npm run build --prefix frontend`) mit über
+Erfolg oder Rollback.
+
+| Event (neu) | Reaktion |
+|---|---|
+| `execute_reverted` | Developer analysiert Fehlerursache → korrigierter Vorschlag |
 
 ## Meta-Architektur
 

@@ -62,15 +62,16 @@ export async function iterate(n) {
   });
 
   // 4) EXECUTE – sichere Vorschläge per Policy auto-genehmigen, dann alle
-  //    freigegebenen (Mensch + Policy) Änderungen tatsächlich schreiben.
+  //    freigegebenen (Mensch + Policy) Änderungen schreiben, verifizieren und
+  //    bei Fehler automatisch zurückrollen (Selbstkorrektur).
   const autoApproved = await applyPolicy();
-  const applied = await applyApprovedChanges();
+  const { applied, reverted } = await applyApprovedChanges();
 
   // 5) LEARN – Zyklus-Erkenntnis festhalten (fließt in die nächste Runde ein).
   const learning =
     `Iteration ${n}: ${reaction.reacted} Event-Reaktion(en), analysiert (5 Perspektiven), 1 Verbesserung priorisiert, `
     + `${improve.toolCalls.some((t) => t.tool === 'propose_code_change') ? '1 Code-Vorschlag erstellt' : 'kein Vorschlag'}, `
-    + `${autoApproved.length} auto-genehmigt, ${applied.length} Änderung(en) ausgeführt.`;
+    + `${autoApproved.length} auto-genehmigt, ${applied.length} ausgeführt, ${reverted.length} zurückgerollt.`;
   await Knowledge.write({
     author: 'ceo', topic: WF, title: `Zyklus #${n} abgeschlossen`, content: learning, tags: ['loop'],
   });
@@ -83,6 +84,7 @@ export async function iterate(n) {
       improve: improve.agentKey,
       autoApproved,
       execute: applied,
+      reverted,
     },
     appliedCount: applied.length,
     learning,
@@ -92,7 +94,7 @@ export async function iterate(n) {
   return {
     iteration: n, durationMs: Date.now() - t0,
     reacted: reaction.reacted, autoApproved: autoApproved.length,
-    applied: applied.length, openApprovals: open, learning,
+    applied: applied.length, reverted: reverted.length, openApprovals: open, learning,
   };
 }
 
@@ -106,7 +108,7 @@ export async function runLoop({ iterations = 3, intervalSec = 0 } = {}) {
     n += 1;
     const r = await iterate(n);
     console.log(`✓ Zyklus #${r.iteration} · ${r.durationMs}ms · ${r.reacted} reagiert · `
-      + `${r.autoApproved} auto-genehmigt · ${r.applied} ausgeführt · ${r.openApprovals} offen`);
+      + `${r.autoApproved} auto-genehmigt · ${r.applied} ausgeführt · ${r.reverted} zurückgerollt · ${r.openApprovals} offen`);
     console.log(`  ⤷ ${r.learning}`);
     if (iterations !== 0 && n >= iterations) break;
     if (intervalSec > 0) await new Promise((res) => setTimeout(res, intervalSec * 1000));

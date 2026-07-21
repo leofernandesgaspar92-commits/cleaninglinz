@@ -20,6 +20,11 @@ const TRIGGERS = {
   new_target: [
     { agent: 'ma', task: (e) => `Neues Übernahmeziel gemeldet: ${JSON.stringify(e.payload)}. Bewerte und lege die Kaufentscheidung dem Menschen vor.` },
   ],
+  // Selbstkorrektur: eine ausgeführte Änderung ist bei der Verifikation gescheitert
+  // und wurde zurückgerollt -> Developer analysiert und erstellt einen korrigierten Vorschlag.
+  execute_reverted: [
+    { agent: 'developer', task: (e) => `Eine Änderung an ${e.payload?.path} ist bei der Verifikation gescheitert (${e.payload?.reason}) und wurde zurückgerollt. Analysiere die Ursache und erstelle einen korrigierten Code-Vorschlag.` },
+  ],
 };
 
 // Verarbeitet alle offenen, relevanten Events (max. je Aufruf begrenzt).
