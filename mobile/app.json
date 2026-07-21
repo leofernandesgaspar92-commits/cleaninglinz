@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Leco",
+    "slug": "leco-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "plugins": [
+      ["expo-location", { "locationWhenInUsePermission": "Leco nutzt deinen Standort für den GPS-Check-in am Objekt." }],
+      ["expo-image-picker", { "photosPermission": "Leco nutzt die Kamera für die Vorher/Nachher-Dokumentation." }]
+    ]
+  }
+}

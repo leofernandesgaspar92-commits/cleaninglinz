@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    container_name: leco-db
+    environment:
+      POSTGRES_USER: leco
+      POSTGRES_PASSWORD: leco
+      POSTGRES_DB: leco
+    ports:
+      - "5432:5432"
+    volumes:
+      - leco_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leco"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  leco_pgdata:

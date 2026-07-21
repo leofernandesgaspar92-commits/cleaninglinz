@@ -1,0 +1,110 @@
+:root {
+  --bg: #0e1117;
+  --bg-elev: #161b22;
+  --bg-elev2: #1c2230;
+  --border: #2a3140;
+  --text: #e6edf3;
+  --text-dim: #8b97a7;
+  --accent: #2f81f7;
+  --accent-2: #3fb950;
+  --warn: #d29922;
+  --danger: #f85149;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+a { color: var(--accent); text-decoration: none; }
+h1, h2, h3 { margin: 0 0 .5rem; }
+button {
+  font: inherit; cursor: pointer; border: 1px solid var(--border);
+  background: var(--bg-elev2); color: var(--text);
+  padding: .5rem .9rem; border-radius: var(--radius); transition: .15s;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover { filter: brightness(1.1); }
+input, select, textarea {
+  font: inherit; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: .5rem .6rem; width: 100%;
+}
+
+/* Layout */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 230px; background: var(--bg-elev); border-right: 1px solid var(--border);
+  padding: 1.2rem 1rem; position: sticky; top: 0; height: 100vh; flex-shrink: 0;
+}
+.brand { font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .2rem; }
+.brand span { color: var(--accent); }
+.tagline { color: var(--text-dim); font-size: .75rem; margin-bottom: 1.5rem; }
+.nav a {
+  display: flex; align-items: center; gap: .6rem; color: var(--text-dim);
+  padding: .6rem .7rem; border-radius: 8px; margin-bottom: .2rem; font-weight: 500;
+}
+.nav a:hover { background: var(--bg-elev2); color: var(--text); }
+.nav a.active { background: var(--bg-elev2); color: var(--text); }
+.nav .ico { width: 18px; text-align: center; }
+.main { flex: 1; padding: 1.6rem 2rem; overflow: auto; min-width: 0; }
+
+/* Cards & grids */
+.grid { display: grid; gap: 1rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+.card {
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.1rem;
+}
+.kpi .label { color: var(--text-dim); font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+.kpi .value { font-size: 1.8rem; font-weight: 800; margin-top: .3rem; }
+.kpi .sub { color: var(--text-dim); font-size: .8rem; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .65rem .7rem; border-bottom: 1px solid var(--border); }
+th { color: var(--text-dim); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .4px; }
+tr:hover td { background: var(--bg-elev); }
+
+/* Badges */
+.badge { display: inline-block; padding: .15rem .55rem; border-radius: 20px; font-size: .72rem; font-weight: 600; }
+.badge.ziel { background: #21262d; color: var(--text-dim); }
+.badge.due_diligence { background: #172554; color: #93c5fd; }
+.badge.verhandlung { background: #422006; color: #fbbf24; }
+.badge.vertrag { background: #3b1d5e; color: #d8b4fe; }
+.badge.uebernommen, .badge.aktiv, .badge.erledigt, .badge.ok { background: #0f2e1a; color: #4ade80; }
+.badge.integriert { background: #052e2b; color: #2dd4bf; }
+.badge.laeuft_aus, .badge.in_arbeit, .badge.risiko, .badge.geplant { background: #422006; color: #fbbf24; }
+.badge.gekuendigt, .badge.verworfen, .badge.beendet { background: #3d1618; color: #fca5a5; }
+
+/* Page header */
+.page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem; }
+.page-head h1 { font-size: 1.5rem; }
+.muted { color: var(--text-dim); }
+
+/* Kanban (Unternehmenstracker) */
+.kanban { display: grid; grid-auto-flow: column; grid-auto-columns: 260px; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; }
+.kanban-col { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: .8rem; }
+.kanban-col h3 { font-size: .85rem; color: var(--text-dim); }
+.kanban-card { background: var(--bg-elev2); border: 1px solid var(--border); border-radius: 8px; padding: .7rem; margin-bottom: .6rem; cursor: grab; }
+.kanban-card:hover { border-color: var(--accent); }
+.kanban-card.dragging { opacity: .4; }
+
+/* Wizard */
+.stepper { display: flex; gap: .5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.step { flex: 1; min-width: 120px; padding: .7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev); }
+.step.done { border-color: var(--accent-2); }
+.step.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.step .n { font-size: .72rem; color: var(--text-dim); }
+.step .t { font-weight: 600; margin-top: .2rem; }
+
+.map { height: 460px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.row { display: flex; gap: 1rem; flex-wrap: wrap; }
+.progress { height: 8px; background: var(--bg-elev2); border-radius: 20px; overflow: hidden; }
+.progress > div { height: 100%; background: var(--accent-2); }
+.toolbar { display: flex; gap: .6rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.pill { font-size: .75rem; color: var(--text-dim); background: var(--bg-elev2); padding: .2rem .6rem; border-radius: 20px; }

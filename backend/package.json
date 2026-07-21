@@ -1,0 +1,19 @@
+{
+  "name": "leco-backend",
+  "version": "0.1.0",
+  "description": "Leco – Backend-API (Reinigungs-Imperium-Management Linz)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node src/lib/migrate.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "express": "^4.19.2",
+    "multer": "^2.0.1",
+    "pg": "^8.12.0"
+  }
+}
