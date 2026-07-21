@@ -25,6 +25,12 @@ async function run() {
   await pool.query(schema);
   console.log('  ✓ Schema angewendet');
 
+  // Enterprise-Erweiterungen (MFA, Audit, Analytics, Indizes) – additiv/idempotent.
+  const enterprise = readFileSync(resolve(dbDir, 'enterprise.sql'), 'utf8');
+  console.log('› Wende Enterprise-Erweiterungen an …');
+  await pool.query(enterprise);
+  console.log('  ✓ Enterprise-Schema angewendet');
+
   if (withSeed) {
     const seed = readFileSync(resolve(dbDir, 'seed.sql'), 'utf8');
     console.log('› Lade Seed-Daten (Linz-Szenario) …');
