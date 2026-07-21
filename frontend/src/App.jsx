@@ -5,6 +5,7 @@ import Customers from './pages/Customers.jsx';
 import Employees from './pages/Employees.jsx';
 import Merger from './pages/Merger.jsx';
 import Import from './pages/Import.jsx';
+import AgiTeam from './pages/AgiTeam.jsx';
 
 const NAV = [
   { to: '/', label: 'Dashboard', ico: '🗺️', end: true },
@@ -13,6 +14,7 @@ const NAV = [
   { to: '/mitarbeiter', label: 'Mitarbeiter', ico: '👷' },
   { to: '/uebernahme', label: 'Übernahme', ico: '⚡' },
   { to: '/import', label: 'Import', ico: '📥' },
+  { to: '/ki-team', label: 'KI-Team', ico: '🤖' },
 ];
 
 export default function App() {
@@ -39,6 +41,7 @@ export default function App() {
           <Route path="/uebernahme" element={<Merger />} />
           <Route path="/uebernahme/:companyId" element={<Merger />} />
           <Route path="/import" element={<Import />} />
+          <Route path="/ki-team" element={<AgiTeam />} />
         </Routes>
       </main>
     </div>
