@@ -34,6 +34,29 @@ app.post('/api/approvals/:id', async (req, res) => {
 // Betriebsmodus
 app.get('/api/mode', (req, res) => res.json({ live: isLive(), autoApprove: isAutoApprove() }));
 
+// Wirkungs-Statistik der Schleife
+app.get('/api/stats', async (req, res) => {
+  const [summary] = await query(`
+    SELECT
+      (SELECT count(*) FROM agi.loop_cycles) AS cycles,
+      (SELECT coalesce(sum(applied_count),0) FROM agi.loop_cycles) AS applied,
+      (SELECT coalesce(sum(jsonb_array_length(coalesce(phase_summary->'reverted','[]'::jsonb))),0)
+         FROM agi.loop_cycles) AS reverted,
+      (SELECT count(*) FROM agi.approvals WHERE status='offen') AS approvals_open,
+      (SELECT count(*) FROM agi.approvals WHERE status='genehmigt') AS approvals_approved,
+      (SELECT count(*) FROM agi.approvals WHERE decided_by='policy') AS approvals_auto,
+      (SELECT count(*) FROM agi.knowledge_base) AS knowledge,
+      (SELECT count(*) FROM agi.agent_runs) AS runs
+  `);
+  const series = await query(`
+    SELECT iteration,
+           applied_count AS applied,
+           jsonb_array_length(coalesce(phase_summary->'reverted','[]'::jsonb)) AS reverted,
+           started_at
+    FROM agi.loop_cycles ORDER BY started_at DESC LIMIT 20`);
+  res.json({ summary, series: series.reverse() });
+});
+
 // Autonome Verbesserungsschleife
 app.get('/api/cycles', async (req, res) => res.json(await LoopLog.recent(20)));
 app.post('/api/loop', async (req, res) => {

@@ -38,7 +38,16 @@ mit **Human-in-the-Loop** an allen kritischen Punkten.
 3. **Knowledge Base** (`agi.knowledge_base`) – gemeinsames Lernen
 4. **Event Bus** (`agi.agent_events`) – Ereignisse lösen Workflows aus
 
-Plus `agi.approvals` (Human-in-the-Loop) und `agi.agent_runs` (Audit + Reflexion).
+Plus `agi.approvals` (Human-in-the-Loop), `agi.agent_runs` (Audit + Reflexion)
+und `agi.loop_cycles` (Zyklus-Protokoll der Verbesserungsschleife).
+
+## Wirkungs-Metriken
+
+`GET /api/stats` liefert die Wirkung der Schleife über die Zeit: Anzahl Zyklen,
+ausgeführte vs. zurückgerollte Änderungen, offene/auto-genehmigte Freigaben,
+Erkenntnisse und Agenten-Läufe – plus eine Zeitreihe je Zyklus. Im **KI-Team-Tab**
+des Leco-Frontends erscheint daraus ein Kennzahlen-Panel mit Balkendiagramm
+(ausgeführt grün / zurückgerollt rot je Zyklus).
 
 ## Orchestrierung
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import MetricsPanel from '../components/MetricsPanel.jsx';
 
 // Ruft das AGI-Team-Dashboard (Port 4100) über den /agi-Proxy auf.
 async function agiGet(path) {
@@ -93,6 +94,8 @@ export default function AgiTeam() {
           AGI-Server nicht erreichbar ({err}). Starte ihn mit <code>cd agents && npm run dashboard</code>.
         </div>
       )}
+
+      <MetricsPanel />
 
       <div className="row" style={{ alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 340px' }}>
