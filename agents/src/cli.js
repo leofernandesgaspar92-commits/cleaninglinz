@@ -12,6 +12,7 @@ import { WORKFLOWS, WORKFLOW_KEYS } from './workflows/index.js';
 import { TaskBoard, Approvals } from './core/comms.js';
 import { isLive } from './core/llm.js';
 import { runLoop } from './loop.js';
+import { reactToEvents } from './reactor.js';
 import { pool } from './core/db.js';
 
 const [cmd, arg, arg2] = process.argv.slice(2);
@@ -41,6 +42,13 @@ async function main() {
   if (cmd === 'loop') {
     // node src/cli.js loop [iterations] [intervalSec]   (0 = unendlich)
     await runLoop({ iterations: Number(arg ?? 3), intervalSec: Number(arg2 ?? 0) });
+    return;
+  }
+
+  if (cmd === 'react') {
+    const r = await reactToEvents();
+    console.log(`Auf ${r.reacted} Event(s) reagiert.`);
+    for (const h of r.handled) console.log(`  ⚡ ${h.event} → ${h.steps.map((s) => s.agent).join(', ')}`);
     return;
   }
 

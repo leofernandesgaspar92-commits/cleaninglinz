@@ -15,6 +15,8 @@
 import { parallel } from './core/orchestrator.js';
 import { runAgent } from './core/agent-runner.js';
 import { applyApprovedChanges } from './core/executor.js';
+import { applyPolicy, isAutoApprove } from './core/policy.js';
+import { reactToEvents } from './reactor.js';
 import { Knowledge, LoopLog, Approvals } from './core/comms.js';
 import { isLive } from './core/llm.js';
 import { pool } from './core/db.js';
@@ -25,7 +27,10 @@ export async function iterate(n) {
   const cycle = await LoopLog.start(n);
   const t0 = Date.now();
 
-  // 0) Aus vergangenen Runden lernen (Memory) – damit sich die Schleife verbessert.
+  // 0a) Reaktiv: zuerst auf offene kritische Events reagieren (z.B. bug_detected).
+  const reaction = await reactToEvents({ max: 5 });
+
+  // 0b) Aus vergangenen Runden lernen (Memory) – damit sich die Schleife verbessert.
   const priorLearnings = await Knowledge.read({ topic: WF, limit: 5 });
   const memory = priorLearnings.length
     ? '\n\nBisherige Learnings der Schleife:\n' + priorLearnings.map((k) => `- ${k.title}: ${k.content.slice(0, 120)}`).join('\n')
@@ -56,23 +61,27 @@ export async function iterate(n) {
     workflow: WF,
   });
 
-  // 4) EXECUTE – nur freigegebene Änderungen werden tatsächlich geschrieben.
+  // 4) EXECUTE – sichere Vorschläge per Policy auto-genehmigen, dann alle
+  //    freigegebenen (Mensch + Policy) Änderungen tatsächlich schreiben.
+  const autoApproved = await applyPolicy();
   const applied = await applyApprovedChanges();
 
   // 5) LEARN – Zyklus-Erkenntnis festhalten (fließt in die nächste Runde ein).
   const learning =
-    `Iteration ${n}: analysiert (5 Perspektiven), 1 Verbesserung priorisiert, `
+    `Iteration ${n}: ${reaction.reacted} Event-Reaktion(en), analysiert (5 Perspektiven), 1 Verbesserung priorisiert, `
     + `${improve.toolCalls.some((t) => t.tool === 'propose_code_change') ? '1 Code-Vorschlag erstellt' : 'kein Vorschlag'}, `
-    + `${applied.length} freigegebene Änderung(en) ausgeführt.`;
+    + `${autoApproved.length} auto-genehmigt, ${applied.length} Änderung(en) ausgeführt.`;
   await Knowledge.write({
     author: 'ceo', topic: WF, title: `Zyklus #${n} abgeschlossen`, content: learning, tags: ['loop'],
   });
 
   await LoopLog.finish(cycle.id, {
     phaseSummary: {
+      react: reaction.handled,
       analyze: analyze.map((r) => r.agentKey),
       ideate: ideate.agentKey,
       improve: improve.agentKey,
+      autoApproved,
       execute: applied,
     },
     appliedCount: applied.length,
@@ -80,19 +89,24 @@ export async function iterate(n) {
   });
 
   const open = (await Approvals.list('offen')).length;
-  return { iteration: n, durationMs: Date.now() - t0, applied: applied.length, openApprovals: open, learning };
+  return {
+    iteration: n, durationMs: Date.now() - t0,
+    reacted: reaction.reacted, autoApproved: autoApproved.length,
+    applied: applied.length, openApprovals: open, learning,
+  };
 }
 
 // Kontinuierlich laufen: N Iterationen (0 = unendlich) im Abstand intervalSec.
 export async function runLoop({ iterations = 3, intervalSec = 0 } = {}) {
   console.log(`▶ Autonome Verbesserungsschleife (${isLive() ? 'LIVE' : 'SIM'}), `
+    + `Auto-Freigabe: ${isAutoApprove() ? 'AN (nur sichere Doku/Notizen)' : 'AUS'}, `
     + `${iterations === 0 ? 'unendlich' : iterations} Iteration(en), Intervall ${intervalSec}s.\n`);
   let n = 0;
   while (iterations === 0 || n < iterations) {
     n += 1;
     const r = await iterate(n);
-    console.log(`✓ Zyklus #${r.iteration} · ${r.durationMs}ms · ${r.applied} ausgeführt · `
-      + `${r.openApprovals} Freigabe(n) offen`);
+    console.log(`✓ Zyklus #${r.iteration} · ${r.durationMs}ms · ${r.reacted} reagiert · `
+      + `${r.autoApproved} auto-genehmigt · ${r.applied} ausgeführt · ${r.openApprovals} offen`);
     console.log(`  ⤷ ${r.learning}`);
     if (iterations !== 0 && n >= iterations) break;
     if (intervalSec > 0) await new Promise((res) => setTimeout(res, intervalSec * 1000));

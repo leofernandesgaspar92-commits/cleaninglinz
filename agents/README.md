@@ -80,6 +80,34 @@ die **nächste Iteration führt die Änderung aus** (schreibt die Datei). So bew
 die Schleife echte Verbesserungen, ohne die menschliche Kontrolle zu umgehen.
 Der Scheduler fährt die Schleife zusätzlich alle 10 Minuten.
 
+### Event-reaktiv (Echtzeit)
+
+Vor jedem Zyklus – und im Scheduler alle 2 Minuten – reagiert der **Reaktor**
+(`src/reactor.js`) sofort auf offene kritische Ereignisse:
+
+| Event | Reaktion |
+|---|---|
+| `bug_detected` | Developer erstellt Fix-Vorschlag → Security prüft |
+| `security_issue` | Security bewertet Schwere & Gegenmaßnahme |
+| `new_target` | M&A bewertet & legt Kaufentscheidung vor |
+
+```bash
+node src/cli.js react            # einmal auf offene Events reagieren
+```
+
+### Sichere Auto-Freigabe (optional)
+
+Mit `AGI_AUTOAPPROVE=true` genehmigt die Schleife **nachweislich harmlose**
+Vorschläge selbst und führt sie aus – dann läuft der komplette Zyklus voll
+autonom. Die Policy (`src/core/policy.js`) ist bewusst eng:
+
+- ✅ auto-ok: nur `code_release` auf einer Allowlist (Doku/Notiz-Dateien wie
+  `agents/IMPROVEMENTS.md`, `docs/**.md`, `*NOTES.md`), Volltext, < 20 KB
+- 🔒 immer Mensch: echter Quellcode (`backend/`, `frontend/`, `.js`, `.sql`),
+  sowie **Budget, Übernahmen, Strategie** – ausnahmslos
+
+Standard ist `false` (jede Änderung braucht den Menschen).
+
 ## Meta-Architektur
 
 - **Selbstreflexion** – jeder Lauf endet mit einer `REFLEXION`, gespeichert in `agi.agent_runs`
@@ -122,6 +150,7 @@ npm run dashboard
 | `node src/cli.js approvals` | offene Freigaben |
 | `node src/cli.js approve\|reject <id>` | Freigabe entscheiden |
 | `node src/cli.js loop [n] [sek]` | Verbesserungs-Schleife n-mal (0 = unendlich) |
+| `node src/cli.js react` | einmal auf offene kritische Events reagieren |
 
 ## Architektur
 

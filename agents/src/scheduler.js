@@ -12,9 +12,12 @@
 import cron from 'node-cron';
 import { WORKFLOWS } from './workflows/index.js';
 import { iterate } from './loop.js';
+import { reactToEvents } from './reactor.js';
 import { isLive } from './core/llm.js';
+import { isAutoApprove } from './core/policy.js';
 
 let running = false;
+let reacting = false;
 let loopIter = 0;
 
 async function fire(name) {
@@ -35,7 +38,7 @@ function log(msg) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
-log(`Leco AGI Team Scheduler gestartet (${isLive() ? 'LIVE' : 'SIMULATION'}).`);
+log(`Leco AGI Team Scheduler gestartet (${isLive() ? 'LIVE' : 'SIMULATION'}, Auto-Freigabe: ${isAutoApprove() ? 'AN' : 'AUS'}).`);
 
 // Autonome Verbesserungsschleife – der Daueransatz: alle 10 Minuten ein Zyklus
 // (analysieren → Lösungen finden → verbessern → ausführen → lernen → repeat).
@@ -47,6 +50,15 @@ async function fireLoop() {
   finally { running = false; }
 }
 cron.schedule('*/10 * * * *', fireLoop);
+
+// Event-Reaktor – reagiert alle 2 Minuten auf kritische Ereignisse (Echtzeit-Gefühl).
+cron.schedule('*/2 * * * *', async () => {
+  if (reacting || running) return;
+  reacting = true;
+  try { const r = await reactToEvents(); if (r.reacted) log(`⚡ auf ${r.reacted} Event(s) reagiert`); }
+  catch (e) { log(`✗ Reaktor: ${e.message}`); }
+  finally { reacting = false; }
+});
 
 cron.schedule('0 6 * * *',  () => fire('daily_standup'));
 cron.schedule('0 8 * * 1',  () => fire('market_intelligence'));

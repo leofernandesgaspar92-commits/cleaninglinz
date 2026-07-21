@@ -27,16 +27,17 @@ export default function AgiTeam() {
   const [runs, setRuns] = useState([]);
   const [cycles, setCycles] = useState([]);
   const [wf, setWf] = useState(WORKFLOWS[0]);
+  const [mode, setMode] = useState({ live: false, autoApprove: false });
   const [busy, setBusy] = useState(false);
   const [looping, setLooping] = useState(false);
   const [err, setErr] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const [b, a, k, r, c] = await Promise.all([
-        agiGet('/board'), agiGet('/approvals'), agiGet('/knowledge'), agiGet('/runs'), agiGet('/cycles'),
+      const [b, a, k, r, c, m] = await Promise.all([
+        agiGet('/board'), agiGet('/approvals'), agiGet('/knowledge'), agiGet('/runs'), agiGet('/cycles'), agiGet('/mode'),
       ]);
-      setBoard(b); setApprovals(a); setKnowledge(k); setRuns(r); setCycles(c); setErr(null);
+      setBoard(b); setApprovals(a); setKnowledge(k); setRuns(r); setCycles(c); setMode(m); setErr(null);
     } catch (e) { setErr(e.message); }
   }, []);
 
@@ -58,13 +59,22 @@ export default function AgiTeam() {
     catch (e) { setErr(e.message); }
     setLooping(false);
   }
+  async function react() {
+    await agiPost('/react'); load();
+  }
 
   return (
     <div>
       <div className="page-head">
         <div>
           <h1>KI-Team <span className="muted" style={{ fontSize: '.9rem' }}>· AGI Multi-Agenten-System</span></h1>
-          <div className="muted">Agenten verbessern Leco autonom – kritische Schritte brauchen deine Freigabe.</div>
+          <div className="muted">
+            Agenten verbessern Leco autonom – kritische Schritte brauchen deine Freigabe.{' '}
+            <span className={`badge ${mode.live ? 'ok' : 'geplant'}`}>{mode.live ? 'LIVE (Claude)' : 'SIMULATION'}</span>{' '}
+            <span className={`badge ${mode.autoApprove ? 'laeuft_aus' : 'ok'}`}>
+              Auto-Freigabe: {mode.autoApprove ? 'AN (nur Doku/Notiz)' : 'AUS'}
+            </span>
+          </div>
         </div>
         <div className="row">
           <select value={wf} onChange={(e) => setWf(e.target.value)} style={{ width: 'auto' }}>
@@ -74,6 +84,7 @@ export default function AgiTeam() {
           <button onClick={runCycle} disabled={looping} title="analysieren → Lösung → verbessern → ausführen → lernen">
             {looping ? 'Zyklus läuft…' : '↻ Verbesserungs-Zyklus'}
           </button>
+          <button onClick={react} title="Sofort auf offene kritische Events reagieren">⚡ Auf Events reagieren</button>
         </div>
       </div>
 

@@ -9,6 +9,8 @@ import { query } from './core/db.js';
 import { TaskBoard, Approvals, Knowledge, LoopLog } from './core/comms.js';
 import { WORKFLOWS, WORKFLOW_KEYS } from './workflows/index.js';
 import { iterate } from './loop.js';
+import { reactToEvents } from './reactor.js';
+import { isAutoApprove } from './core/policy.js';
 import { isLive } from './core/llm.js';
 
 let loopIter = 0;
@@ -29,13 +31,16 @@ app.post('/api/approvals/:id', async (req, res) => {
   res.json(r || { error: 'nicht gefunden' });
 });
 
+// Betriebsmodus
+app.get('/api/mode', (req, res) => res.json({ live: isLive(), autoApprove: isAutoApprove() }));
+
 // Autonome Verbesserungsschleife
 app.get('/api/cycles', async (req, res) => res.json(await LoopLog.recent(20)));
 app.post('/api/loop', async (req, res) => {
   loopIter += 1;
-  const r = await iterate(loopIter);
-  res.json(r);
+  res.json(await iterate(loopIter));
 });
+app.post('/api/react', async (req, res) => res.json(await reactToEvents()));
 
 // Workflow manuell auslösen
 app.post('/api/workflows/:name', async (req, res) => {
