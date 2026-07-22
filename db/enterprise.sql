@@ -53,6 +53,23 @@ CREATE TABLE IF NOT EXISTS analytics_events (
 CREATE INDEX IF NOT EXISTS idx_analytics_feature ON analytics_events(feature);
 CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics_events(created_at DESC);
 
+-- --- Asynchrone Job-Queue (Hintergrundverarbeitung, z.B. Exporte) -----------
+CREATE TABLE IF NOT EXISTS job_queue (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    type        TEXT NOT NULL,           -- z.B. 'export_customers'
+    status      TEXT NOT NULL DEFAULT 'wartend'
+                  CHECK (status IN ('wartend','laeuft','fertig','fehler')),
+    params      JSONB,
+    result      JSONB,
+    error       TEXT,
+    progress    INTEGER NOT NULL DEFAULT 0,
+    created_by  TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    started_at  TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_jobq_status ON job_queue(status, created_at);
+
 -- --- Performance: Indizes für schnelle Abfragen (Millionen Datensätze) ------
 CREATE INDEX IF NOT EXISTS idx_jobs_customer ON jobs(customer_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_employee ON jobs(employee_id);

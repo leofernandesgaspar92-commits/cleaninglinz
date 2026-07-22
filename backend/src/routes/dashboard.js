@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { query, one } from '../lib/db.js';
+import { wrap } from '../lib/cache.js';
 
 const router = Router();
 
-// Live-Operations: alle georeferenzierten Punkte für die Linz-Karte
+// Live-Operations: alle georeferenzierten Punkte für die Linz-Karte (gecacht 8s)
 router.get('/map', async (req, res, next) => {
   try {
+    const data = await wrap('dash:map', 8000, async () => {
     const jobs = await query(`
       SELECT j.id, j.status, j.title, j.scheduled_at,
              c.name AS customer_name, c.lat, c.lng, c.building_type,
@@ -19,13 +21,16 @@ router.get('/map', async (req, res, next) => {
       SELECT id, name, status, lat, lng, is_own
       FROM companies WHERE lat IS NOT NULL
     `);
-    res.json({ jobs, companies: targets });
+      return { jobs, companies: targets };
+    });
+    res.json(data);
   } catch (e) { next(e); }
 });
 
-// Morgan-Modus: Imperium-Kennzahlen auf einen Blick
+// Morgan-Modus: Imperium-Kennzahlen auf einen Blick (gecacht 10s)
 router.get('/finance', async (req, res, next) => {
   try {
+    const data = await wrap('dash:finance', 10000, async () => {
     const totals = await one(`
       SELECT
         COUNT(*) FILTER (WHERE status IN ('uebernommen','integriert') OR is_own) AS companies_owned,
@@ -36,7 +41,9 @@ router.get('/finance', async (req, res, next) => {
     `);
     const perCompany = await query('SELECT * FROM v_company_financials ORDER BY ebitda DESC NULLS LAST');
     const mrr = await query('SELECT * FROM v_mrr_by_company ORDER BY mrr DESC');
-    res.json({ totals, perCompany, mrr });
+      return { totals, perCompany, mrr };
+    });
+    res.json(data);
   } catch (e) { next(e); }
 });
 

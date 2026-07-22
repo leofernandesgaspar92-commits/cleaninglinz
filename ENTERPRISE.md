@@ -39,9 +39,16 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - `POST /api/analytics/track` – Funktionsnutzung erfassen (Frontend trackt Seitenaufrufe)
 - `GET /api/analytics/heatmap` – meistgenutzte Funktionen + Nutzung nach Uhrzeit (Admin/Manager)
 
-### 6. Performance
+### 6. Performance & Skalierung
 - Zusätzliche Indizes für schnelle Abfragen bei großen Datenmengen
   (Jobs nach Kunde/Mitarbeiter, auslaufende Verträge)
+- **Caching** (`lib/cache.js`): Redis (falls `REDIS_URL`) oder In-Memory-Fallback;
+  Dashboard-Endpunkte gecacht → verifiziert 109 ms → 1–4 ms (Hit-Rate 0,75).
+  Statistik unter `GET /api/queue/cache/stats`
+- **Asynchrone Job-Queue** (`lib/queue.js`, Tabelle `job_queue`): zeitaufwändige
+  Aufgaben laufen im Hintergrund, Status pollbar, überleben Neustarts.
+  `POST /api/queue/:type` (z.B. `export_customers`), `GET /api/queue/job/:id`.
+  Frontend: „⬇ Export (Hintergrund)" in der Kundenliste mit Fortschritt via Toast
 
 ### 8. KI-Vertragsanalyse (Merger-Integration)
 - `POST /api/contract-ai/analyze` – extrahiert aus Vertragstext automatisch
@@ -92,7 +99,8 @@ Im Frontend anschließend **Anmelden**, unter **Admin** das Monitoring öffnen, 
 Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 
 - **Elasticsearch** für Volltextsuche über Millionen Dokumente
-- **Redis-Caching** + **Load Balancing** (horizontale Skalierung)
+- **Load Balancing** (horizontale Skalierung; Caching ist bereits vorhanden,
+  Redis wird über `REDIS_URL` aktiviert)
 - **Grafana-Dashboards** auf Basis des vorhandenen `/metrics`-Endpunkts
 - **Datev-/Buchhaltungs-API**, **Outlook/Exchange-Kalender**, **Slack/Teams**
 - **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)

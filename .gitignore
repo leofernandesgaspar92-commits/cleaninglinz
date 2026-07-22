@@ -10,3 +10,4 @@ agents/.applied-backups/
 # Backups & Dokumentenablage (Laufzeit)
 backups/
 documents/
+backend/exports/

@@ -33,11 +33,14 @@ export const openapiSpec = {
     { name: 'Merger', description: 'Übernahmen (Merger & Acquisition)' },
     { name: 'KI', description: 'KI-Vertragsanalyse' },
     { name: 'Stammdaten', description: 'Unternehmen, Kunden, Verträge, Mitarbeiter, Jobs' },
-    { name: 'System', description: 'Health & Metrics' },
+    { name: 'System', description: 'Health, Metrics, Job-Queue & Cache' },
   ],
   paths: {
     '/api/health': { get: { tags: ['System'], summary: 'Health-Check', responses: { 200: { description: 'OK' } } } },
     '/metrics': { get: { tags: ['System'], summary: 'Prometheus-Metriken', responses: { 200: { description: 'Exposition-Format' } } } },
+    '/api/queue/{type}': { post: { tags: ['System'], summary: 'Hintergrund-Job einreihen', parameters: [{ name: 'type', in: 'path', required: true, schema: { type: 'string', enum: ['export_customers', 'reindex'] } }], responses: { 202: { description: 'Angenommen (läuft asynchron)' } } } },
+    '/api/queue/job/{id}': { get: { tags: ['System'], summary: 'Job-Status pollen', parameters: [idParam], responses: { 200: { description: 'Job' } } } },
+    '/api/queue/cache/stats': { get: { tags: ['System'], summary: 'Cache-Statistik (Hit-Rate)', responses: { 200: { description: 'Stats' } } } },
 
     '/api/auth/register': { post: { tags: ['Auth'], summary: 'Registrierung (Bootstrap-Admin / Admin)', requestBody: reqBody({ email: 'string', password: 'string', full_name: 'string', role: 'string' }), responses: { 201: { description: 'Nutzer' }, 403: { description: 'Nur Admin' } } } },
     '/api/auth/login': { post: { tags: ['Auth'], summary: 'Login (Passwort + optional TOTP)', requestBody: reqBody({ email: 'string', password: 'string', totp: 'string' }), responses: { 200: { description: 'Token + Nutzer' }, 206: { description: 'MFA erforderlich' }, 401: { description: 'Falsche Daten' }, 423: { description: 'Konto gesperrt' } } } },

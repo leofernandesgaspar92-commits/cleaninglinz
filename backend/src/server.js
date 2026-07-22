@@ -14,10 +14,13 @@ import admin from './routes/admin.js';
 import analytics from './routes/analytics.js';
 import sso from './routes/sso.js';
 import contractAI from './routes/contract-ai.js';
+import queueRouter from './routes/queue.js';
 import swaggerUi from 'swagger-ui-express';
 import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
 import { openapiSpec } from './lib/openapi.js';
+import { startWorker } from './lib/queue.js';
+import './lib/jobHandlers.js'; // registriert die Job-Handler
 
 const app = express();
 app.set('trust proxy', true);
@@ -38,6 +41,7 @@ app.use('/api/admin', admin);
 app.use('/api/analytics', analytics);
 app.use('/api/sso', sso);
 app.use('/api/contract-ai', contractAI);
+app.use('/api/queue', queueRouter);
 
 // Fachdomäne
 app.use('/api/companies', companies);
@@ -60,3 +64,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Leco-Backend (Enterprise) läuft auf http://localhost:${PORT}`));
+
+// Hintergrund-Worker für die Job-Queue starten.
+startWorker().catch((e) => console.error('Worker-Start fehlgeschlagen:', e.message));

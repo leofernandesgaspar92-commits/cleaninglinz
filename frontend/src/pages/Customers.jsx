@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import { api, euro } from '../lib/api.js';
+import { toast } from '../components/Toast.jsx';
 
 const TYPE_LABEL = {
   buero: 'Büro', wohnhaus: 'Wohnhaus', industrie: 'Industrie',
@@ -12,8 +13,26 @@ export default function Customers() {
   const [open, setOpen] = useState(null);
   const [q, setQ] = useState('');
   const [err, setErr] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => { api.get('/customers').then(setCustomers).catch((e) => setErr(e.message)); }, []);
+
+  // Asynchroner Export als Hintergrund-Job (blockiert die UI nicht).
+  async function exportBackground() {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/queue/export_customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const job = await res.json();
+      toast.info('Export gestartet', 'Läuft im Hintergrund – du kannst weiterarbeiten.');
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 400));
+        const s = await api.get(`/queue/job/${job.id}`);
+        if (s.status === 'fertig') { toast.success('Export fertig', `${s.result.count} Kunden exportiert (${s.result.file}).`); break; }
+        if (s.status === 'fehler') { toast.error('Export fehlgeschlagen', s.error); break; }
+      }
+    } catch (e) { toast.error('Export fehlgeschlagen', e.message); }
+    setExporting(false);
+  }
 
   async function toggle(id) {
     if (open === id) return setOpen(null);
@@ -39,6 +58,9 @@ export default function Customers() {
       <div className="toolbar">
         <input placeholder="Suche nach Name, Adresse, Bezirk …" value={q}
           onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 360 }} />
+        <button onClick={exportBackground} disabled={exporting} title="Läuft asynchron im Hintergrund">
+          {exporting ? 'Exportiere …' : '⬇ Export (Hintergrund)'}
+        </button>
       </div>
 
       {err && <div className="card" style={{ borderColor: 'var(--danger)' }}>{err}</div>}
