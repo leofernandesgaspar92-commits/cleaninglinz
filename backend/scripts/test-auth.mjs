@@ -80,5 +80,23 @@ check('Passwort-Richtlinie: zu gebräuchlich -> 400', weakCommon.status === 400)
 const emailInPw = await post('/auth/register', { email: `maxmuster_${Date.now()}@leco.at`, password: 'maxmuster2026' });
 check('Passwort-Richtlinie: enthält E-Mail-Name -> 400', emailInPw.status === 400);
 
+// 13) MFA-Pflicht für Admins (nur wenn Richtlinie aktiv: REQUIRE_ADMIN_MFA).
+// Der erste Admin hat oben MFA aktiviert (token2). Für den Sperr-Fall legen wir
+// einen zweiten Admin OHNE MFA an.
+if (/^(1|true|yes|on)$/i.test(process.env.REQUIRE_ADMIN_MFA || '')) {
+  const admin2Email = `admin2_${Date.now()}@leco.at`;
+  await post('/auth/register', { email: admin2Email, password: 'Zugang2026Sicher', role: 'admin' }, token2);
+  const login2 = await post('/auth/login', { email: admin2Email, password: 'Zugang2026Sicher' });
+  const noMfaAdmin = login2.body.token;
+
+  const blocked = await post('/admin/notify/test', {}, noMfaAdmin);
+  check('MFA-Pflicht: Admin ohne MFA gesperrt (403)',
+    blocked.status === 403 && blocked.body.code === 'admin_mfa_required');
+  const allowed = await post('/admin/notify/test', {}, token2);
+  check('MFA-Pflicht: Admin mit MFA erlaubt', allowed.status === 200 || allowed.status === 201);
+  const readOk = await get('/admin/overview', noMfaAdmin);
+  check('MFA-Pflicht: Lesen bleibt erlaubt (Warnung sichtbar)', readOk.status === 200);
+}
+
 console.log(`\n${ok} bestanden, ${fail} fehlgeschlagen.`);
 process.exit(fail ? 1 : 0);

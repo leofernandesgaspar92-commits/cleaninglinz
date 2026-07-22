@@ -302,6 +302,20 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   ohne Code = **206** (MFA verlangt), `me.mfa_enabled=true`. Damit ist das schon
   vorhandene, gegen RFC-Testvektoren geprüfte TOTP-Backend endlich bedienbar.
 
+### 27. MFA-Pflicht für Admins – konfigurierbare Richtlinie (autonome Agenten-Entscheidung)
+- **Jetzt sicher möglich**, da die MFA-Selbstverwaltung (Nr. 26) existiert.
+- **`REQUIRE_ADMIN_MFA`** (Env, Standard aus): schaltet die Richtlinie scharf.
+  Aktiv sind **privilegierte Admin-Aktionen (Schreibzugriffe) nur mit aktiver MFA**
+  – sonst `403 { code: 'admin_mfa_required' }`. **Lesen bleibt erlaubt**, damit der
+  betroffene Admin die Warnung sieht und MFA über `/sicherheit` aktivieren kann
+  (kein Lockout).
+- **Frontend**: Warnbanner im Admin-Dashboard („MFA nicht aktiv … je nach Richtlinie
+  gesperrt") mit Button „Jetzt einrichten" → `/sicherheit`.
+- Verifiziert: Richtlinie **AN 19/19** (Admin ohne MFA → 403, mit MFA erlaubt,
+  Lesen ok), **AUS 16/16** (Checks übersprungen), **API 33/33** unverändert.
+  Prüfbar mit `REQUIRE_ADMIN_MFA=1 npm run test:auth` gegen einen entsprechend
+  gestarteten Server.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

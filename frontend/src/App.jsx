@@ -112,7 +112,7 @@ export default function App() {
           <Route path="/import" element={<Import />} />
           <Route path="/ki-team" element={<AgiTeam />} />
           <Route path="/login" element={<Login onAuth={refresh} />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={<Admin user={user} />} />
           <Route path="/sicherheit" element={<Security user={user} onChange={refresh} />} />
         </Routes>
       </main>

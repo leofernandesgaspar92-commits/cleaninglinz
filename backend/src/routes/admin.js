@@ -8,6 +8,20 @@ const router = Router();
 // Alle Admin-Endpunkte erfordern Authentifizierung + Admin-Rolle.
 router.use(requireAuth, requireRole('admin'));
 
+// Optionale Richtlinie: privilegierte Admin-Aktionen (Schreibzugriffe) nur mit
+// aktiver MFA. Lesen (GET) bleibt erlaubt, damit betroffene Admins die Warnung
+// sehen und MFA über /sicherheit aktivieren können. Aktiv via REQUIRE_ADMIN_MFA.
+const REQUIRE_ADMIN_MFA = /^(1|true|yes|on)$/i.test(process.env.REQUIRE_ADMIN_MFA || '');
+router.use(async (req, res, next) => {
+  if (!REQUIRE_ADMIN_MFA || req.method === 'GET' || req.method === 'HEAD') return next();
+  try {
+    const u = await one('SELECT mfa_enabled FROM users WHERE id = $1', [req.user.sub]);
+    if (!u?.mfa_enabled)
+      return res.status(403).json({ error: 'MFA für Admin-Aktionen erforderlich – bitte unter „Sicherheit" aktivieren.', code: 'admin_mfa_required' });
+    next();
+  } catch (e) { next(e); }
+});
+
 // Benachrichtigungen: Feed, Konfigurationsstatus, Test-Versand
 router.get('/notifications', async (req, res, next) => {
   try { res.json({ status: notifyStatus(), items: await recentNotifications() }); } catch (e) { next(e); }

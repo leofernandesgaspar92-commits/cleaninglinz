@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
+import { NavLink } from 'react-router-dom';
 import { authApi, track } from '../lib/auth.js';
 import { toast } from '../components/Toast.jsx';
 
-export default function Admin() {
+export default function Admin({ user }) {
   const [data, setData] = useState({ overview: null, audit: [], errors: [], users: [], heatmap: null, notif: { status: {}, items: [] } });
   const [err, setErr] = useState(null);
 
@@ -48,6 +49,15 @@ export default function Admin() {
         <h1>Admin · Systemüberwachung</h1>
         <a href="/api/datev/buchungsstapel.csv"><button title="Buchungsstapel im DATEV-Format (EXTF)">⬇ DATEV-Export</button></a>
       </div>
+
+      {user && user.role === 'admin' && !user.mfa_enabled && (
+        <div className="card" style={{ borderColor: 'var(--warning)', marginBottom: '1.2rem',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+          <span>⚠ <b>MFA für dein Admin-Konto nicht aktiv.</b> Für privilegierte Konten dringend
+            empfohlen; je nach Richtlinie sind Admin-Aktionen sonst gesperrt.</span>
+          <NavLink to="/sicherheit"><button className="primary">Jetzt einrichten</button></NavLink>
+        </div>
+      )}
 
       <div className="cards" style={{ marginBottom: '1.2rem' }}>
         <Kpi label="Nutzer" value={s?.users} sub={`${s?.users_mfa ?? 0} mit MFA`} />
