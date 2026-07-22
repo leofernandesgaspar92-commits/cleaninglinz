@@ -17,6 +17,7 @@ import contractAI from './routes/contract-ai.js';
 import queueRouter from './routes/queue.js';
 import calendar from './routes/calendar.js';
 import search from './routes/search.js';
+import datev from './routes/datev.js';
 import swaggerUi from 'swagger-ui-express';
 import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
@@ -46,6 +47,7 @@ app.use('/api/contract-ai', contractAI);
 app.use('/api/queue', queueRouter);
 app.use('/api/calendar', calendar);
 app.use('/api/search', search);
+app.use('/api/datev', datev);
 
 // Fachdomäne
 app.use('/api/companies', companies);

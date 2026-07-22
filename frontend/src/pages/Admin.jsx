@@ -35,7 +35,10 @@ export default function Admin() {
 
   return (
     <div>
-      <div className="page-head"><h1>Admin · Systemüberwachung</h1></div>
+      <div className="page-head">
+        <h1>Admin · Systemüberwachung</h1>
+        <a href="/api/datev/buchungsstapel.csv"><button title="Buchungsstapel im DATEV-Format (EXTF)">⬇ DATEV-Export</button></a>
+      </div>
 
       <div className="cards" style={{ marginBottom: '1.2rem' }}>
         <Kpi label="Nutzer" value={s?.users} sub={`${s?.users_mfa ?? 0} mit MFA`} />

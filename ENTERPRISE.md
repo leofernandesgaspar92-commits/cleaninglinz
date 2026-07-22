@@ -50,6 +50,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   `POST /api/queue/:type` (z.B. `export_customers`), `GET /api/queue/job/:id`.
   Frontend: „⬇ Export (Hintergrund)" in der Kundenliste mit Fortschritt via Toast
 
+### 12. DATEV-Export (Buchhaltung)
+- `lib/datev.js` + `routes/datev.js`: `GET /api/datev/buchungsstapel.csv` erzeugt
+  einen **DATEV-Buchungsstapel im EXTF-Format** (Kernfelder) aus den aktiven
+  Verträgen (Monatsumsätze): EXTF-Kopfzeile, Spaltenüberschriften, Buchungssätze
+  (Umsatz, S/H, Konto/Gegenkonto, Belegdatum, Buchungstext), Windows-1252, CRLF
+- Konfiguration via Umgebung: `DATEV_BERATER`, `DATEV_MANDANT`,
+  `DATEV_KONTO_ERLOES` (Std. 8400), `DATEV_GEGENKONTO` (Std. 10000, SKR03)
+- Frontend: „⬇ DATEV-Export" im Admin-Dashboard
+- Verifiziert: gültige EXTF-Struktur (Format 700/v13), Buchungszeilen korrekt
+  formatiert. Import in DATEV nach Konfiguration von Berater/Mandant/Konten
+
 ### 11. Globale Volltextsuche
 - `routes/search.js`: `GET /api/search?q=` durchsucht Kunden, Unternehmen und
   Verträge per **PostgreSQL-FTS** (deutsche `tsvector`-Indizes) + Teilwort-Fallback,
@@ -130,7 +141,7 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 - **Load Balancing** (horizontale Skalierung; Caching ist bereits vorhanden,
   Redis wird über `REDIS_URL` aktiviert)
 - **Grafana-Dashboards** auf Basis des vorhandenen `/metrics`-Endpunkts
-- **Datev-/Buchhaltungs-API** (Slack/Teams und Outlook/Exchange-Kalender sind vorhanden)
+- **Live-Datev-API-Anbindung** (der DATEV-EXTF-Export ist vorhanden)
 - **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)
 - **CD** (Deployment nach Staging/Prod – CI ist bereits vorhanden)
 - **Native Windows-Paketierung** (Electron/MSIX) – PWA-Installierbarkeit ist bereits vorhanden
