@@ -63,6 +63,24 @@ check('Unternehmen lesen', coRead.status === 200 && coRead.body.name === `Test-R
 const coPatch = await patch('/companies/' + companyId, { ebitda: 55000 });
 check('Unternehmen aktualisieren', coPatch.status === 200 && Number(coPatch.body.ebitda) === 55000);
 
+// 1b) RBAC: „mitarbeiter" darf lesen, aber nicht schreiben/löschen
+const staffEmail = `staff_${tag}@leco.at`;
+await post('/auth/register', { email: staffEmail, password: pw, role: 'mitarbeiter' }); // via Admin-Token
+const staffLogin = await post('/auth/login', { email: staffEmail, password: pw });
+const staffTok = staffLogin.body.token;
+const asStaff = {
+  get: (p) => fetch(B + p, { headers: { Authorization: `Bearer ${staffTok}` } }).then(j),
+  post: (p, body) => fetch(B + p, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${staffTok}` }, body: JSON.stringify(body) }).then(j),
+  del: (p) => fetch(B + p, { method: 'DELETE', headers: { Authorization: `Bearer ${staffTok}` } }).then((r) => ({ status: r.status })),
+};
+check('Mitarbeiter-Login liefert Token', !!staffTok);
+const sRead = await asStaff.get('/companies');
+check('RBAC: Mitarbeiter darf lesen (200)', sRead.status === 200);
+const sWrite = await asStaff.post('/companies', { name: 'Darf nicht', city: 'Linz' });
+check('RBAC: Mitarbeiter darf NICHT schreiben (403)', sWrite.status === 403);
+const sDel = await asStaff.del('/companies/' + companyId);
+check('RBAC: Mitarbeiter darf NICHT löschen (403)', sDel.status === 403);
+
 // 2) Kunde: CREATE (mit company_id) → contracts (leer)
 const cuCreate = await post('/customers', {
   company_id: companyId, name: `Bürohaus ${tag}`, building_type: 'buero',

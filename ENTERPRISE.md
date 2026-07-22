@@ -222,6 +222,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **26/26 API-Checks** (warnt bei Auslauf, dedupliziert im 2. Lauf);
   Live-Demo erzeugt zwei Warnungen im Feed (9 Tage → error, 25 Tage → warning).
 
+### 20. RBAC-Feinschliff – Least-Privilege für Stammdaten (autonome Agenten-Entscheidung)
+- **Security-Befund**: Nach dem Login durfte **jede** Rolle alle Geschäftsdaten
+  nicht nur lesen, sondern auch anlegen/ändern/löschen.
+- **Methodenbasiertes RBAC** (`server.js`): **Lesen** (GET) für jede angemeldete
+  Rolle, **Schreiben** (POST/PATCH/PUT) **ab „manager"**, **Löschen** (DELETE)
+  **nur „admin"** – angewandt auf `companies`, `customers`, `contracts`,
+  `employees`, `jobs`, `acquisitions`. **Stammdaten-Import** ab „manager".
+  (`dashboard` ist ohnehin nur lesend; `admin` gatet intern per `requireRole('admin')`.)
+- Verifiziert: **30/30 API-Checks** – `mitarbeiter` liest `200`, Schreiben/Löschen
+  `403`; admin/manager unverändert.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
