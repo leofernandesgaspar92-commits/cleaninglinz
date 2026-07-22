@@ -41,6 +41,9 @@ jobs:
       - name: Auth end-to-end tests
         working-directory: backend
         run: node scripts/test-auth.mjs
+      - name: DB zuruecksetzen (frischer Bootstrap fuer API-Tests)
+        working-directory: backend
+        run: node src/lib/migrate.js --reset --seed
       - name: Business-API end-to-end tests
         working-directory: backend
         run: node scripts/test-api.mjs

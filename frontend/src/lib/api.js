@@ -1,11 +1,25 @@
 // Schlanker Fetch-Wrapper für die Leco-API.
+import { getToken, clearToken } from './auth.js';
+
 const BASE = '/api';
+
+// Bei abgelaufenem/fehlendem Login: Token verwerfen und zur Anmeldung.
+function onUnauthorized() {
+  clearToken();
+  if (window.location.pathname !== '/login') window.location.assign('/login');
+}
+
+function authHeaders(extra = {}) {
+  const token = getToken();
+  return { ...extra, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
 
 async function req(path, options = {}) {
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: authHeaders({ 'Content-Type': 'application/json', ...(options.headers || {}) }),
   });
+  if (res.status === 401) { onUnauthorized(); throw new Error('Nicht authentifiziert'); }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `HTTP ${res.status}`);
@@ -19,9 +33,10 @@ export const api = {
   post: (p, body) => req(p, { method: 'POST', body: JSON.stringify(body) }),
   patch: (p, body) => req(p, { method: 'PATCH', body: JSON.stringify(body) }),
   del: (p) => req(p, { method: 'DELETE' }),
-  // Datei-Upload (CSV-Import) – ohne JSON-Header
+  // Datei-Upload (CSV-Import) – ohne JSON-Header, aber mit Bearer-Token
   upload: async (p, formData) => {
-    const res = await fetch(BASE + p, { method: 'POST', body: formData });
+    const res = await fetch(BASE + p, { method: 'POST', headers: authHeaders(), body: formData });
+    if (res.status === 401) { onUnauthorized(); throw new Error('Nicht authentifiziert'); }
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
     return res.json();
   },

@@ -26,14 +26,28 @@ const NAV = [
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
   const location = useLocation();
 
-  const refresh = () => me().then(setUser);
+  const refresh = () => me().then((u) => { setUser(u); setReady(true); });
   useEffect(() => { refresh(); }, []);
   // Seitenaufrufe für die Nutzungs-Heatmap erfassen.
   useEffect(() => { track(`page${location.pathname.replace(/\//g, '.') || '.home'}`); }, [location.pathname]);
 
   const logout = () => { clearToken(); setUser(null); toast.info('Abgemeldet', 'Du wurdest sicher abgemeldet.'); };
+
+  // Zugriffsschutz: Ohne gültigen Login nur die Anmeldeseite zeigen – geschützte
+  // Seiten (Kunden-PII, Umsätze) werden gar nicht erst gerendert.
+  if (!ready) return <div className="app"><ProgressBar /></div>;
+  if (!user) {
+    return (
+      <div className="app">
+        <ProgressBar />
+        <Toasts />
+        <main className="main"><Login onAuth={refresh} /></main>
+      </div>
+    );
+  }
 
   const paletteActions = user
     ? [{ id: 'logout', label: 'Abmelden', ico: '🚪', action: logout }]

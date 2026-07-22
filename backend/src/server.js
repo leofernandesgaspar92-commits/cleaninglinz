@@ -26,6 +26,7 @@ import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
 import { businessMetrics } from './lib/businessMetrics.js';
 import { securityHeaders, rateLimit, readiness } from './lib/hardening.js';
+import { requireAuth } from './lib/security.js';
 import { openapiSpec } from './lib/openapi.js';
 import { startWorker } from './lib/queue.js';
 import './lib/jobHandlers.js'; // registriert die Job-Handler
@@ -63,25 +64,31 @@ app.get('/metrics', async (req, res) => { res.type('text/plain').send(renderMetr
 app.get('/api/openapi.json', (req, res) => res.json(openapiSpec));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { customSiteTitle: 'Leco API' }));
 
-// Sicherheit / Enterprise
+// Öffentlich (bewusst ohne Login):
+//  - /api/auth, /api/sso: Anmeldung selbst
+//  - /api/analytics: /track erfasst auch anonyme Seitenaufrufe (Heatmap)
+//  - /api/calendar: .ics-Feeds werden von Outlook/Exchange ohne Bearer abonniert
 app.use('/api/auth', rateLimit({ windowMs: 60000, max: 30, name: 'auth' }), auth);
-app.use('/api/admin', admin);
 app.use('/api/analytics', analytics);
 app.use('/api/sso', sso);
-app.use('/api/contract-ai', contractAI);
-app.use('/api/queue', queueRouter);
 app.use('/api/calendar', calendar);
-app.use('/api/search', search);
-app.use('/api/datev', datev);
 
-// Fachdomäne
-app.use('/api/companies', companies);
-app.use('/api/customers', customers);
-app.use('/api/contracts', contracts);
-app.use('/api/employees', employees);
-app.use('/api/jobs', jobs);
-app.use('/api/dashboard', dashboard);
-app.use('/api/acquisitions', acquisitions);
+// Ab hier: Login erforderlich (JWT-Bearer). admin/analytics-heatmap gaten
+// zusätzlich per Rolle in ihren Routen.
+app.use('/api/admin', requireAuth, admin);
+app.use('/api/contract-ai', requireAuth, contractAI);
+app.use('/api/queue', requireAuth, queueRouter);
+app.use('/api/search', requireAuth, search);
+app.use('/api/datev', requireAuth, datev);
+
+// Fachdomäne – geschützte Geschäftsdaten (Kunden-PII, Umsätze, Verträge).
+app.use('/api/companies', requireAuth, companies);
+app.use('/api/customers', requireAuth, customers);
+app.use('/api/contracts', requireAuth, contracts);
+app.use('/api/employees', requireAuth, employees);
+app.use('/api/jobs', requireAuth, jobs);
+app.use('/api/dashboard', requireAuth, dashboard);
+app.use('/api/acquisitions', requireAuth, acquisitions);
 app.use('/api/import', importRouter);
 
 // Statisches Frontend ausliefern (für die Electron-Desktop-App bzw. Single-Port-

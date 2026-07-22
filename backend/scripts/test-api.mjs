@@ -4,15 +4,17 @@
 // Basis konfigurierbar über API_BASE (Standard: lokaler Server).
 const B = process.env.API_BASE || 'http://localhost:4000/api';
 
+let TOKEN = null;
+const authHeaders = (extra = {}) => ({ ...extra, ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}) });
 const j = async (r) => ({ status: r.status, body: await r.json().catch(() => ({})) });
-const get = (p) => fetch(B + p).then(j);
+const get = (p) => fetch(B + p, { headers: authHeaders() }).then(j);
 const post = (p, body) => fetch(B + p, {
-  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body),
 }).then(j);
 const patch = (p, body) => fetch(B + p, {
-  method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body),
 }).then(j);
-const del = (p) => fetch(B + p, { method: 'DELETE' }).then((r) => ({ status: r.status }));
+const del = (p) => fetch(B + p, { method: 'DELETE', headers: authHeaders() }).then((r) => ({ status: r.status }));
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 let ok = 0, fail = 0;
@@ -24,9 +26,23 @@ const check = (name, cond, extra = '') => {
 // Aufräum-Register (in umgekehrter Anlage-Reihenfolge löschen).
 const cleanup = [];
 
-// 0) Health
+// 0) Health (öffentlich)
 const health = await get('/health');
 check('Health-Check', health.status === 200 && health.body.ok === true);
+
+// 0a) Zugriffsschutz: Geschäftsdaten ohne Login -> 401
+const guard = await get('/companies');
+check('Geschäfts-API ohne Login -> 401', guard.status === 401);
+
+// 0b) Anmelden (Bootstrap-Admin oder frischer Admin) und Token holen
+const email = `apitest_${Date.now()}@leco.at`;
+const pw = 'ApiTestPasswort123';
+const reg = await post('/auth/register', { email, password: pw, role: 'admin' });
+if (reg.status === 201) {
+  const login = await post('/auth/login', { email, password: pw });
+  TOKEN = login.body.token;
+}
+check('Anmeldung liefert Token', !!TOKEN);
 
 // 1) Unternehmen: CREATE → LIST → READ → PATCH
 const tag = Date.now();

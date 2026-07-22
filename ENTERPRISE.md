@@ -178,6 +178,23 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - **In die CI verdrahtet** (`.github/workflows/ci.yml`): läuft bei jedem Push/PR
   direkt nach den Auth-Tests. Verifiziert: **21/21 grün**.
 
+### 17. Zugriffsschutz der Geschäftsdaten – Login-Gate (autonome Agenten-Entscheidung)
+- **Vom AGI-Team entschieden & umgesetzt** (durch `test-api.mjs` belegt): Business-CRUD,
+  Dashboard, Übernahme etc. waren **ohne Login** erreichbar (Kunden-PII, Umsätze,
+  anonyme Schreibzugriffe) — das größte offene Sicherheits-/DSGVO-Risiko.
+- **Backend**: `requireAuth` (JWT-Bearer) auf allen Geschäftsrouten (`companies`,
+  `customers`, `contracts`, `employees`, `jobs`, `dashboard`, `acquisitions`,
+  `search`, `queue`, `contract-ai`, `datev`, `admin`). **Öffentlich bleiben bewusst
+  nur**: Anmeldung (`auth`/`sso`), anonyme Analytics (`/track` für die Heatmap) und
+  die **Outlook-`.ics`-Feeds** (`calendar`, werden ohne Bearer abonniert).
+- **Frontend**: `lib/api.js` sendet den Bearer-Token und fängt `401` ab (Token
+  verwerfen → Anmeldung). `App.jsx` rendert ohne gültigen Login **nur die
+  Anmeldeseite** – geschützte Seiten werden gar nicht erst erzeugt.
+- **Tests**: `test-api.mjs` meldet sich jetzt an und prüft zusätzlich, dass die
+  Geschäfts-API ohne Token `401` liefert. Verifiziert: **23/23 grün**,
+  `/companies` & `/dashboard` ohne Token = 401, `.ics` weiterhin 200, eingeloggt
+  volle App (Screenshots geprüft). CI setzt vor den API-Tests die DB frisch auf.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
