@@ -129,6 +129,15 @@ async function computeMergerRoi() {
     FROM companies
     WHERE is_own = FALSE AND status <> 'verworfen'
       AND ebitda IS NOT NULL AND ebitda > 0 AND annual_revenue IS NOT NULL`);
+  // Due-Diligence-Reife je Ziel (Risiken/Offene aus der Prüfung).
+  const ddRows = await query(`
+    SELECT company_id,
+           COUNT(*)::int AS total,
+           COUNT(*) FILTER (WHERE status = 'ok')::int      AS ok,
+           COUNT(*) FILTER (WHERE status = 'risiko')::int  AS risiko,
+           COUNT(*) FILTER (WHERE status = 'offen')::int   AS offen
+    FROM due_diligence_items GROUP BY company_id`);
+  const ddById = new Map(ddRows.map((d) => [d.company_id, d]));
   const round = (n, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
   const rows = targets.map((t) => {
     const ebitda = Number(t.ebitda);
@@ -136,6 +145,8 @@ async function computeMergerRoi() {
     const priceEstimated = t.purchase_price == null;
     const price = priceEstimated ? ebitda * ASK_MULTIPLE : Number(t.purchase_price);
     const synergyEbitda = revenue * SYNERGY_RATE;
+    const dd = ddById.get(t.id) || { total: 0, ok: 0, risiko: 0, offen: 0 };
+    const decidable = dd.total - 0; // n_a bleibt in total, für Reife zählt ok/total
     return {
       id: t.id, name: t.name, status: t.status,
       annual_revenue: revenue, ebitda, employee_count: t.employee_count,
@@ -146,6 +157,9 @@ async function computeMergerRoi() {
       synergy_ebitda: Math.round(synergyEbitda),
       roi_with_synergy_pct: round(((ebitda + synergyEbitda) / price) * 100, 1),
       payback_with_synergy_years: round(price / (ebitda + synergyEbitda), 1),
+      dd_total: dd.total, dd_ok: dd.ok, dd_risiko: dd.risiko, dd_offen: dd.offen,
+      dd_ready_pct: decidable > 0 ? round((dd.ok / decidable) * 100, 0) : null,
+      dd_risk: dd.risiko > 0, // rote Flagge: mindestens ein bekanntes Risiko
     };
   }).sort((a, b) => b.roi_with_synergy_pct - a.roi_with_synergy_pct);
   return { assumptions: { ask_multiple: ASK_MULTIPLE, synergy_rate: SYNERGY_RATE }, targets: rows };
@@ -180,10 +194,12 @@ router.get('/merger-roi.csv', async (req, res, next) => {
     sendCsv(res, 'uebernahme-roi.csv', toCsv(
       ['Ziel', 'Status', 'Umsatz_EUR', 'EBITDA_EUR', 'Kaufpreis_EUR', 'Preis_geschaetzt',
         'EBITDA_Multiple', 'ROI_Prozent', 'Amortisation_Jahre', 'Synergie_EBITDA_EUR',
-        'ROI_inkl_Synergie_Prozent', 'Amortisation_inkl_Synergie_Jahre'],
+        'ROI_inkl_Synergie_Prozent', 'Amortisation_inkl_Synergie_Jahre',
+        'DD_Punkte', 'DD_OK', 'DD_Risiken', 'DD_Offen', 'DD_Reife_Prozent'],
       targets.map((t) => [t.name, t.status, t.annual_revenue, t.ebitda, t.price,
         t.price_estimated ? 'ja' : 'nein', t.ebitda_multiple, t.roi_pct, t.payback_years,
-        t.synergy_ebitda, t.roi_with_synergy_pct, t.payback_with_synergy_years])));
+        t.synergy_ebitda, t.roi_with_synergy_pct, t.payback_with_synergy_years,
+        t.dd_total, t.dd_ok, t.dd_risiko, t.dd_offen, t.dd_ready_pct])));
   } catch (e) { next(e); }
 });
 

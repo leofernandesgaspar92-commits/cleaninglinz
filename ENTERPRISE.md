@@ -342,6 +342,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   **36/36 API-Checks** nach dem Refactoring unverändert; CSV-Inhalt korrekt escaped
   (JSON-Detail, BOM).
 
+### 30. Due-Diligence-Reife im ROI-Ranking (autonome Agenten-Entscheidung)
+- **M&A-Kern**: Das ROI-Ranking (Nr. 24) zeigte nur Rendite, **nicht das Prüf-Risiko**.
+  Ein Ziel mit Top-ROI, aber offenen DD-Risiken ist riskanter als die Zahl suggeriert.
+- **`computeMergerRoi()`** aggregiert nun je Ziel die **`due_diligence_items`**
+  (ok/risiko/offen, **Reife-Prozent**, `dd_risk`-Flagge bei bekanntem Risiko).
+- **Frontend**: ROI-Panel um Spalte **„DD-Reife"** erweitert (Prozent + Badge
+  „⚠ n Risiko" / „n offen" / „bereit"). **CSV-Export** um DD-Spalten ergänzt.
+- Zeigt **Rendite vs. Reife/Risiko**: höchste ROI (Stahl & Glanz 34,4 %) noch
+  ungeprüft, Donau Sauber 26,8 % mit **43 % Reife und 1 bekanntem Risiko**.
+- Verifiziert: **37/37 API-Checks**; live Donau Sauber 3/7 ok, 1 Risiko, 3 offen.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

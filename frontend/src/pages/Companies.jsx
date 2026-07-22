@@ -59,7 +59,7 @@ export default function Companies() {
               <thead>
                 <tr>
                   <th>Ziel</th><th>Status</th><th>EBITDA</th><th>Kaufpreis</th>
-                  <th>Multiple</th><th>ROI</th><th>ROI + Synergie</th><th>Amortisation</th>
+                  <th>Multiple</th><th>ROI + Synergie</th><th>Amortisation</th><th>DD-Reife</th>
                 </tr>
               </thead>
               <tbody>
@@ -70,9 +70,18 @@ export default function Companies() {
                     <td>{euro(t.ebitda)}</td>
                     <td>{euro(t.price)}{t.price_estimated && <span className="muted" title="geschätzt aus EBITDA-Multiple"> *</span>}</td>
                     <td>{t.ebitda_multiple}×</td>
-                    <td>{t.roi_pct}%</td>
                     <td><b style={{ color: 'var(--accent)' }}>{t.roi_with_synergy_pct}%</b></td>
                     <td>{t.payback_with_synergy_years} J.</td>
+                    <td>
+                      {t.dd_total === 0 ? <span className="muted">–</span> : (
+                        <span title={`${t.dd_ok} ok · ${t.dd_offen} offen · ${t.dd_risiko} Risiko`}>
+                          {t.dd_ready_pct}%{' '}
+                          {t.dd_risk
+                            ? <span className="badge geplant">⚠ {t.dd_risiko} Risiko</span>
+                            : (t.dd_offen > 0 ? <span className="badge">{t.dd_offen} offen</span>
+                              : <span className="badge ok">bereit</span>)}
+                        </span>)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

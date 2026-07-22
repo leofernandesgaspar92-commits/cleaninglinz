@@ -168,6 +168,12 @@ check('Dashboard /merger-roi (Übernahme-ROI)',
   && dRoi.body.targets.every((t, i, a) => i === 0 || a[i - 1].roi_with_synergy_pct >= t.roi_with_synergy_pct),
   `top=${roiTop?.name} (${roiTop?.roi_with_synergy_pct}% inkl. Synergie), ziele=${dRoi.body.targets?.length}`);
 
+// DD-Reife im ROI-Ranking: das Ziel mit DD-Prüfung (Donau Sauber, 7 Punkte inkl. 1 Risiko)
+const ddTarget = dRoi.body.targets.find((t) => t.dd_total > 0);
+check('merger-roi enthält DD-Reife (Risiken/Offene)',
+  ddTarget && typeof ddTarget.dd_ready_pct === 'number' && ddTarget.dd_risk === (ddTarget.dd_risiko > 0),
+  `${ddTarget?.name}: ${ddTarget?.dd_ok}/${ddTarget?.dd_total} ok, ${ddTarget?.dd_risiko} Risiko, Reife ${ddTarget?.dd_ready_pct}%`);
+
 // 6) Übernahme-Workflow: erzeugt Akquise + Schritte
 const acq = await get('/acquisitions/by-company/' + companyId);
 check('Übernahme-Workflow legt Schritte an',
