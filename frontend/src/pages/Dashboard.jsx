@@ -81,6 +81,20 @@ export default function Dashboard() {
 
         {/* Seitliche Panels */}
         <div style={{ flex: '1 1 300px' }}>
+          <h3>📅 Kalender (Outlook/Exchange)</h3>
+          <div className="card" style={{ marginBottom: '1rem' }}>
+            <div className="muted" style={{ fontSize: '.82rem', marginBottom: '.6rem' }}>
+              Reinigungstermine & Vertragsfristen als Kalender abonnieren oder importieren.
+            </div>
+            <div className="row">
+              <a href="/api/calendar/jobs.ics"><button>Termine (.ics)</button></a>
+              <a href="/api/calendar/contracts.ics"><button>Vertragsfristen (.ics)</button></a>
+            </div>
+            <div className="muted" style={{ fontSize: '.72rem', marginTop: '.5rem' }}>
+              In Outlook: „Kalender hinzufügen → Aus dem Internet" mit der Feed-URL – aktualisiert sich automatisch.
+            </div>
+          </div>
+
           <h3>EBITDA-Explorer</h3>
           <div className="card" style={{ padding: '.4rem .2rem', marginBottom: '1rem' }}>
             <table>

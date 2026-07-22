@@ -97,7 +97,10 @@ export default function Customers() {
                                   <td>{ct.frequency || '–'}</td>
                                   <td>{euro(ct.value_monthly)}</td>
                                   <td>{ct.price_per_sqm ?? '–'}</td>
-                                  <td>{ct.end_date?.slice(0, 10) || '–'}</td>
+                                  <td>
+                                    {ct.end_date?.slice(0, 10) || '–'}
+                                    {ct.end_date && <a href={`/api/calendar/contract/${ct.id}.ics`} title="Frist in Kalender" style={{ marginLeft: 6 }}>📅</a>}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>

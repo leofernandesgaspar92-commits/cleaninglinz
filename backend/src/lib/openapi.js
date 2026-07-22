@@ -34,6 +34,7 @@ export const openapiSpec = {
     { name: 'KI', description: 'KI-Vertragsanalyse' },
     { name: 'Stammdaten', description: 'Unternehmen, Kunden, Verträge, Mitarbeiter, Jobs' },
     { name: 'System', description: 'Health, Metrics, Job-Queue & Cache' },
+    { name: 'Kalender', description: 'iCalendar-Feeds (Outlook/Exchange)' },
   ],
   paths: {
     '/api/health': { get: { tags: ['System'], summary: 'Health-Check', responses: { 200: { description: 'OK' } } } },
@@ -69,6 +70,9 @@ export const openapiSpec = {
 
     '/api/contract-ai/analyze': { post: { tags: ['KI'], summary: 'Vertragstext analysieren (KI)', requestBody: reqBody({ text: 'string' }), responses: { 200: { description: 'Extrahierte Felder' } } } },
     '/api/contract-ai/create-contract': { post: { tags: ['KI'], summary: 'Vertrag aus Analyse anlegen', requestBody: reqBody({ customer_id: 'string' }), responses: { 201: { description: 'Vertrag' } } } },
+
+    '/api/calendar/jobs.ics': { get: { tags: ['Kalender'], summary: 'Reinigungstermine als iCalendar-Feed', responses: { 200: { description: 'text/calendar' } } } },
+    '/api/calendar/contracts.ics': { get: { tags: ['Kalender'], summary: 'Vertragsfristen als iCalendar-Feed', responses: { 200: { description: 'text/calendar' } } } },
 
     '/api/companies': crud('Stammdaten', 'Unternehmen'),
     '/api/companies/{id}': crudItem('Stammdaten', 'Unternehmen'),

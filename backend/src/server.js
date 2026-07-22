@@ -15,6 +15,7 @@ import analytics from './routes/analytics.js';
 import sso from './routes/sso.js';
 import contractAI from './routes/contract-ai.js';
 import queueRouter from './routes/queue.js';
+import calendar from './routes/calendar.js';
 import swaggerUi from 'swagger-ui-express';
 import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
@@ -42,6 +43,7 @@ app.use('/api/analytics', analytics);
 app.use('/api/sso', sso);
 app.use('/api/contract-ai', contractAI);
 app.use('/api/queue', queueRouter);
+app.use('/api/calendar', calendar);
 
 // Fachdomäne
 app.use('/api/companies', companies);

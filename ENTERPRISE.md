@@ -50,6 +50,15 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   `POST /api/queue/:type` (z.B. `export_customers`), `GET /api/queue/job/:id`.
   Frontend: „⬇ Export (Hintergrund)" in der Kundenliste mit Fortschritt via Toast
 
+### 10. Outlook/Exchange-Kalender (iCalendar-Feeds)
+- `lib/ical.js` erzeugt RFC-5545-konforme Feeds; `routes/calendar.js` liefert
+  `/api/calendar/jobs.ics` (Reinigungstermine), `/contracts.ics` (Vertragsfristen,
+  ganztags mit −30/−7-Tage-Erinnerungen) und `/contract/:id.ics` (einzeln)
+- In Outlook/Exchange als Internet-Kalender **abonnierbar** (aktualisiert sich
+  automatisch) oder importierbar; auch Google/Apple-kompatibel
+- Frontend: Abo-/Download-Karte im Dashboard + 📅-Link je Vertrag
+- Verifiziert: gültiges VCALENDAR (VEVENT+VALARM, CRLF, korrektes Escaping)
+
 ### 9. Benachrichtigungen (Slack / Teams / In-App)
 - `lib/notify.js`: schreibt jede Meldung in den **In-App-Feed** (Tabelle
   `notifications`) und pusht sie zusätzlich an **Slack**/**Teams** Incoming
@@ -111,7 +120,7 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 - **Load Balancing** (horizontale Skalierung; Caching ist bereits vorhanden,
   Redis wird über `REDIS_URL` aktiviert)
 - **Grafana-Dashboards** auf Basis des vorhandenen `/metrics`-Endpunkts
-- **Datev-/Buchhaltungs-API**, **Outlook/Exchange-Kalender** (Slack/Teams ist vorhanden)
+- **Datev-/Buchhaltungs-API** (Slack/Teams und Outlook/Exchange-Kalender sind vorhanden)
 - **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)
 - **CD** (Deployment nach Staging/Prod – CI ist bereits vorhanden)
 - **Native Windows-Paketierung** (Electron/MSIX) – PWA-Installierbarkeit ist bereits vorhanden
