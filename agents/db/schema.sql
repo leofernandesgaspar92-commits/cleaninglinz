@@ -12,13 +12,15 @@
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS agi;
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- IDs über das eingebaute gen_random_uuid() (PostgreSQL 13+) – bewusst KEINE
+-- Abhängigkeit von der uuid-ossp-Extension im public-Schema, damit ein Reset der
+-- App-DB (DROP SCHEMA public CASCADE) die Defaults hier nicht mitreißt.
 
 -- ---------------------------------------------------------------------------
 -- 1) TASK BOARD – zentrale Aufgabenliste
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS agi.task_board (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title         TEXT NOT NULL,
     description   TEXT,
     status        TEXT NOT NULL DEFAULT 'backlog'
@@ -40,7 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON agi.task_board(assigned_to);
 -- 2) MESSAGE QUEUE – Nachrichten zwischen Agenten (inkl. Handoffs)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS agi.agent_messages (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     from_agent    TEXT NOT NULL,
     to_agent      TEXT NOT NULL,           -- Agent-Key oder 'broadcast'
     kind          TEXT NOT NULL DEFAULT 'info'
@@ -57,7 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_msgs_to ON agi.agent_messages(to_agent, consumed)
 -- 3) KNOWLEDGE BASE – gemeinsame Entscheidungen & Learnings (Inter-Agenten-Learning)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS agi.knowledge_base (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     author        TEXT NOT NULL,           -- Agent-Key
     topic         TEXT NOT NULL,           -- z.B. 'architektur','markt_linz','finanzen'
     title         TEXT NOT NULL,
@@ -71,7 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_kb_topic ON agi.knowledge_base(topic);
 -- 4) EVENT BUS – Ereignisse, die Aktionen/Workflows auslösen
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS agi.agent_events (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type          TEXT NOT NULL,           -- z.B. 'bug_detected','new_target','deploy_ready'
     source        TEXT NOT NULL,           -- Agent-Key oder 'system'
     payload       JSONB,
@@ -84,7 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_events_unhandled ON agi.agent_events(handled, typ
 -- APPROVALS – Human-in-the-Loop-Kontrollpunkte (Agent schlägt vor, Mensch entscheidet)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS agi.approvals (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category      TEXT NOT NULL
                     CHECK (category IN ('code_release','uebernahme','budget','strategie','sonstiges')),
     requested_by  TEXT NOT NULL,           -- Agent-Key
@@ -106,7 +108,7 @@ ALTER TABLE agi.approvals ADD COLUMN IF NOT EXISTS applied_at TIMESTAMPTZ;
 -- LOOP CYCLES – Protokoll der autonomen Verbesserungsschleife
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS agi.loop_cycles (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     iteration     INTEGER NOT NULL,
     phase_summary JSONB,                   -- {analyze, ideate, improve, execute}
     applied_count INTEGER NOT NULL DEFAULT 0,
@@ -119,7 +121,7 @@ CREATE TABLE IF NOT EXISTS agi.loop_cycles (
 -- AGENT RUN LOG – jeder Agenten-Lauf (Audit + Selbstreflexion, lesbar gespeichert)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS agi.agent_runs (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     agent_key     TEXT NOT NULL,
     task_id       UUID REFERENCES agi.task_board(id) ON DELETE SET NULL,
     workflow      TEXT,

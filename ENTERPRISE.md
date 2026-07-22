@@ -195,6 +195,18 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   `/companies` & `/dashboard` ohne Token = 401, `.ics` weiterhin 200, eingeloggt
   volle App (Screenshots geprüft). CI setzt vor den API-Tests die DB frisch auf.
 
+### 18. AGI-Schema unabhängig von der public-Extension (autonome Agenten-Entscheidung)
+- **Architect-Befund (mehrfach reproduziert)**: Die `agi.*`-Tabellen nutzten
+  `uuid_generate_v4()` aus der **uuid-ossp-Extension im `public`-Schema**. Ein
+  Reset der App-DB (`DROP SCHEMA public CASCADE`) riss die Spalten-Defaults mit –
+  danach schlugen AGI-Inserts mit „null id" fehl (stiller Ausfall des Agenten-Logs).
+- **Fix**: Umstellung des AGI-Schemas auf das **eingebaute `gen_random_uuid()`**
+  (PostgreSQL 13+) – keine Extension-Abhängigkeit mehr, keine Kopplung ans
+  `public`-Schema. Deployment-/Migrations-robust.
+- Verifiziert: AGI-Schema neu aufgebaut, dann `backend --reset --seed` (droppt
+  `public` + uuid-ossp), **danach AGI-Insert erfolgreich** (ID automatisch erzeugt) –
+  genau die Sequenz, die vorher fehlschlug.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
