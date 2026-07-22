@@ -132,6 +132,13 @@ check('Dashboard /finance (Totals)', dFin.status === 200 && dFin.body.totals && 
 const dExp = await get('/dashboard/expiring-contracts');
 check('Dashboard /expiring-contracts', dExp.status === 200 && Array.isArray(dExp.body));
 
+const dWork = await get('/dashboard/workload');
+check('Dashboard /workload (Team-Auslastung)',
+  dWork.status === 200 && Array.isArray(dWork.body.employees)
+  && typeof dWork.body.unassigned_open === 'number'
+  && dWork.body.totals && typeof dWork.body.totals.avg_open_per_employee === 'number',
+  `aktive=${dWork.body.totals?.active_employees}, Ø offen=${dWork.body.totals?.avg_open_per_employee}, unbesetzt=${dWork.body.unassigned_open}`);
+
 // 6) Übernahme-Workflow: erzeugt Akquise + Schritte
 const acq = await get('/acquisitions/by-company/' + companyId);
 check('Übernahme-Workflow legt Schritte an',

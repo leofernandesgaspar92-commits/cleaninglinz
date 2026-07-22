@@ -62,4 +62,38 @@ router.get('/expiring-contracts', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Team-Auslastung: offene/erledigte Jobs je aktivem Mitarbeiter + unbesetzte Jobs.
+// Analyst-Sicht: Über-/Unterauslastung erkennen und Arbeit sinnvoll verteilen.
+router.get('/workload', async (req, res, next) => {
+  try {
+    const OPEN = "('geplant','unterwegs','in_arbeit')";
+    const employees = await query(`
+      SELECT e.id, e.first_name, e.last_name, e.role,
+             COUNT(j.id) FILTER (WHERE j.status IN ${OPEN}) AS open_jobs,
+             COUNT(j.id) FILTER (WHERE j.status = 'erledigt') AS done_jobs
+      FROM employees e
+      LEFT JOIN jobs j ON j.employee_id = e.id
+      WHERE e.status = 'aktiv'
+      GROUP BY e.id, e.first_name, e.last_name, e.role
+      ORDER BY open_jobs DESC, e.last_name`);
+    const [{ unassigned_open }] = await query(
+      `SELECT COUNT(*)::int AS unassigned_open FROM jobs WHERE employee_id IS NULL AND status IN ${OPEN}`);
+    const rows = employees.map((e) => ({
+      ...e, open_jobs: Number(e.open_jobs), done_jobs: Number(e.done_jobs),
+      underutilized: Number(e.open_jobs) === 0,
+    }));
+    const openTotal = rows.reduce((s, e) => s + e.open_jobs, 0);
+    res.json({
+      employees: rows,
+      unassigned_open,
+      totals: {
+        active_employees: rows.length,
+        open_jobs: openTotal,
+        underutilized: rows.filter((e) => e.underutilized).length,
+        avg_open_per_employee: rows.length ? Math.round((openTotal / rows.length) * 10) / 10 : 0,
+      },
+    });
+  } catch (e) { next(e); }
+});
+
 export default router;

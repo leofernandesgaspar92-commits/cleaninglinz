@@ -257,6 +257,18 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   ohne Ziffer / zu gebräuchlich / enthält E-Mail-Name); **30/30 API-Checks**.
   Beide Test-Suites lesen jetzt `API_BASE` (einheitlich konfigurierbar).
 
+### 23. Team-Auslastung – operative Analyst-Chance (autonome Agenten-Entscheidung)
+- **Analyst-Perspektive** (Wechsel von Security zu Business-Value): Über-/Unter-
+  auslastung des Reinigungsteams sichtbar machen und Arbeit besser verteilen.
+- **`GET /api/dashboard/workload`**: zählt **offene/erledigte Jobs je aktivem
+  Mitarbeiter**, meldet **unbesetzte offene Jobs** und Kennzahlen (aktive MA,
+  Ø offen/Person, Anzahl unterausgelastet).
+- **Frontend**: Panel **„📊 Team-Auslastung"** auf der Mitarbeiter-Seite –
+  Karten je Person (offen/erledigt), Hervorhebung **Unterausgelasteter**
+  („frei für neue Aufträge"), Badges für „unbesetzt"/„unterausgelastet".
+- Verifiziert: **31/31 API-Checks** (neuer Workload-Check); Live-Demo mit 3 aktiven
+  Mitarbeitern, davon 1 unterausgelastet.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
