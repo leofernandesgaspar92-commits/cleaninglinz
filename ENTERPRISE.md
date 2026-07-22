@@ -99,8 +99,12 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   Felder → „Als Vertrag übernehmen")
 
 ### 7. Observability, API-Dokumentation & CI/CD
-- **Prometheus-Metriken** unter `GET /metrics` (Request-Zähler, Latenz-Histogramm,
-  RSS-Speicher, Uptime) – direkt von Prometheus/Grafana scrapebar
+- **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
+  Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
+  `leco_ebitda_eur`, `leco_mrr_eur`, `leco_active_contracts`,
+  `leco_companies_pipeline`, `leco_jobs{status}`) – gecacht
+- **Grafana + Prometheus-Stack** unter `monitoring/` (Docker-Compose mit
+  auto-provisioniertem Dashboard „Leco – Betrieb & Geschäft", 9 Panels)
 - **OpenAPI 3** unter `GET /api/openapi.json` + interaktive **Swagger UI** unter `/api/docs`
 - **GitHub-Actions-CI** (`.github/workflows/ci.yml`): startet PostgreSQL, migriert
   (Schema+Enterprise+Seed), fährt das Backend hoch, führt die Auth-E2E-Tests aus,
@@ -140,7 +144,6 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
   (für Millionen Dokumente; PostgreSQL-FTS ist implementiert)
 - **Load Balancing** (horizontale Skalierung; Caching ist bereits vorhanden,
   Redis wird über `REDIS_URL` aktiviert)
-- **Grafana-Dashboards** auf Basis des vorhandenen `/metrics`-Endpunkts
 - **Live-Datev-API-Anbindung** (der DATEV-EXTF-Export ist vorhanden)
 - **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)
 - **CD** (Deployment nach Staging/Prod – CI ist bereits vorhanden)

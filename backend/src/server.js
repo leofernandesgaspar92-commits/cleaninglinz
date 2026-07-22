@@ -21,6 +21,7 @@ import datev from './routes/datev.js';
 import swaggerUi from 'swagger-ui-express';
 import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
+import { businessMetrics } from './lib/businessMetrics.js';
 import { openapiSpec } from './lib/openapi.js';
 import { startWorker } from './lib/queue.js';
 import './lib/jobHandlers.js'; // registriert die Job-Handler
@@ -34,7 +35,7 @@ app.use(metricsMiddleware);
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'leco-backend', version: '1.0-enterprise' }));
 
 // Monitoring & Dokumentation
-app.get('/metrics', (req, res) => { res.type('text/plain').send(renderMetrics()); });
+app.get('/metrics', async (req, res) => { res.type('text/plain').send(renderMetrics() + await businessMetrics()); });
 app.get('/api/openapi.json', (req, res) => res.json(openapiSpec));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { customSiteTitle: 'Leco API' }));
 

@@ -1,0 +1,10 @@
+# Grafana lädt Dashboards automatisch aus dem Ordner.
+apiVersion: 1
+providers:
+  - name: Leco
+    orgId: 1
+    folder: Leco
+    type: file
+    disableDeletion: false
+    options:
+      path: /var/lib/grafana/dashboards
