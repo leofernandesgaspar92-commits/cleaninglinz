@@ -50,6 +50,15 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   `POST /api/queue/:type` (z.B. `export_customers`), `GET /api/queue/job/:id`.
   Frontend: „⬇ Export (Hintergrund)" in der Kundenliste mit Fortschritt via Toast
 
+### 11. Globale Volltextsuche
+- `routes/search.js`: `GET /api/search?q=` durchsucht Kunden, Unternehmen und
+  Verträge per **PostgreSQL-FTS** (deutsche `tsvector`-Indizes) + Teilwort-Fallback,
+  relevanzsortiert, gecacht
+- In die **Command Palette (Strg+K)** integriert – global suchen und direkt zum
+  Treffer springen
+- ES-Upgradepfad: bei Millionen Dokumenten auf Elasticsearch spiegeln, Route bleibt
+- Verifiziert: Treffer über alle Entitäten inkl. Teilwort (Donau, Ars, Stiege, Urfahr)
+
 ### 10. Outlook/Exchange-Kalender (iCalendar-Feeds)
 - `lib/ical.js` erzeugt RFC-5545-konforme Feeds; `routes/calendar.js` liefert
   `/api/calendar/jobs.ics` (Reinigungstermine), `/contracts.ics` (Vertragsfristen,
@@ -116,7 +125,8 @@ Im Frontend anschließend **Anmelden**, unter **Admin** das Monitoring öffnen, 
 
 Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 
-- **Elasticsearch** für Volltextsuche über Millionen Dokumente
+- **Elasticsearch** als Skalierung der bereits vorhandenen Volltextsuche
+  (für Millionen Dokumente; PostgreSQL-FTS ist implementiert)
 - **Load Balancing** (horizontale Skalierung; Caching ist bereits vorhanden,
   Redis wird über `REDIS_URL` aktiviert)
 - **Grafana-Dashboards** auf Basis des vorhandenen `/metrics`-Endpunkts

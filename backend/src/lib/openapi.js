@@ -71,6 +71,7 @@ export const openapiSpec = {
     '/api/contract-ai/analyze': { post: { tags: ['KI'], summary: 'Vertragstext analysieren (KI)', requestBody: reqBody({ text: 'string' }), responses: { 200: { description: 'Extrahierte Felder' } } } },
     '/api/contract-ai/create-contract': { post: { tags: ['KI'], summary: 'Vertrag aus Analyse anlegen', requestBody: reqBody({ customer_id: 'string' }), responses: { 201: { description: 'Vertrag' } } } },
 
+    '/api/search': { get: { tags: ['System'], summary: 'Globale Volltextsuche (Kunden/Firmen/Verträge)', parameters: [{ name: 'q', in: 'query', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Treffer' } } } },
     '/api/calendar/jobs.ics': { get: { tags: ['Kalender'], summary: 'Reinigungstermine als iCalendar-Feed', responses: { 200: { description: 'text/calendar' } } } },
     '/api/calendar/contracts.ics': { get: { tags: ['Kalender'], summary: 'Vertragsfristen als iCalendar-Feed', responses: { 200: { description: 'text/calendar' } } } },
 

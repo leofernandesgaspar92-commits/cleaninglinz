@@ -25,8 +25,23 @@ export default function CommandPalette({ actions = [] }) {
   const nav = useNavigate();
   const gPending = useRef(false);
 
+  const [results, setResults] = useState({ customers: [], companies: [], contracts: [] });
+
   const commands = [...NAV_COMMANDS, ...actions];
   const filtered = commands.filter((c) => c.label.toLowerCase().includes(q.toLowerCase()));
+
+  // Globale Volltextsuche (debounced), sobald ≥2 Zeichen getippt werden.
+  useEffect(() => {
+    if (!open || q.trim().length < 2) { setResults({ customers: [], companies: [], contracts: [] }); return; }
+    const id = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(q)}`).then((r) => r.json())
+        .then((j) => setResults({ customers: j.customers || [], companies: j.companies || [], contracts: j.contracts || [] }))
+        .catch(() => {});
+    }, 220);
+    return () => clearTimeout(id);
+  }, [q, open]);
+
+  const hasResults = results.customers.length + results.companies.length + results.contracts.length > 0;
 
   const run = useCallback((c) => {
     setOpen(false); setQ('');
@@ -81,7 +96,27 @@ export default function CommandPalette({ actions = [] }) {
                 </div>
               ))}
             </div>
-            <div className="palette-foot muted">↑↓ wählen · ⏎ öffnen · Esc schließen</div>
+            {hasResults && (
+              <div className="palette-list" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="muted" style={{ padding: '.4rem .7rem', fontSize: '.72rem', textTransform: 'uppercase', letterSpacing: '.5px' }}>Suchergebnisse</div>
+                {results.companies.map((c) => (
+                  <div key={'co' + c.id} className="palette-item" onClick={() => run({ to: `/uebernahme/${c.id}` })}>
+                    <span className="ico">🏢</span><span style={{ flex: 1 }}>{c.name}</span><span className="pill">{c.status}</span>
+                  </div>
+                ))}
+                {results.customers.map((c) => (
+                  <div key={'cu' + c.id} className="palette-item" onClick={() => run({ to: '/kunden' })}>
+                    <span className="ico">📋</span><span style={{ flex: 1 }}>{c.name}</span><span className="muted" style={{ fontSize: '.75rem' }}>{c.district || ''}</span>
+                  </div>
+                ))}
+                {results.contracts.map((c) => (
+                  <div key={'ct' + c.id} className="palette-item" onClick={() => run({ to: '/kunden' })}>
+                    <span className="ico">📄</span><span style={{ flex: 1 }}>{c.title}</span><span className="muted" style={{ fontSize: '.75rem' }}>{c.customer}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="palette-foot muted">↑↓ Befehle · ⏎ öffnen · Volltextsuche über Kunden, Firmen, Verträge · Esc</div>
           </div>
         </div>
       )}

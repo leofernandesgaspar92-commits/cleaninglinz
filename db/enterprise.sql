@@ -83,6 +83,14 @@ CREATE TABLE IF NOT EXISTS job_queue (
 );
 CREATE INDEX IF NOT EXISTS idx_jobq_status ON job_queue(status, created_at);
 
+-- --- Volltextsuche (deutsche tsvector-Indizes; ES-Upgradepfad dokumentiert) --
+CREATE INDEX IF NOT EXISTS idx_customers_fts ON customers
+  USING gin (to_tsvector('german', coalesce(name,'') || ' ' || coalesce(address,'') || ' ' || coalesce(district,'') || ' ' || coalesce(owner_name,'')));
+CREATE INDEX IF NOT EXISTS idx_companies_fts ON companies
+  USING gin (to_tsvector('german', coalesce(name,'') || ' ' || coalesce(legal_name,'') || ' ' || coalesce(district,'') || ' ' || coalesce(owner_name,'')));
+CREATE INDEX IF NOT EXISTS idx_contracts_fts ON contracts
+  USING gin (to_tsvector('german', coalesce(title,'') || ' ' || coalesce(notes,'')));
+
 -- --- Performance: Indizes für schnelle Abfragen (Millionen Datensätze) ------
 CREATE INDEX IF NOT EXISTS idx_jobs_customer ON jobs(customer_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_employee ON jobs(employee_id);
