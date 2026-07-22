@@ -316,6 +316,21 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   Prüfbar mit `REQUIRE_ADMIN_MFA=1 npm run test:auth` gegen einen entsprechend
   gestarteten Server.
 
+### 28. CSV-Report-Exports + Fix authentifizierter Downloads (autonome Agenten-Entscheidung)
+- **Business-Wunsch**: Analytics nach Excel/Board. **Dabei latenter Bug entdeckt**:
+  seit dem Login-Gate sind Datei-Downloads geschützt, aber ein `<a href>` sendet
+  **keinen** Bearer-Token → der DATEV-Export lieferte `401`.
+- **CSV-Exporte**: `GET /api/dashboard/merger-roi.csv` und `/mrr-trend.csv`
+  (gemeinsame Compute-Funktionen mit den JSON-Endpunkten; **Excel-tauglich**:
+  UTF-8-BOM, CRLF, Semikolon-getrennt).
+- **`downloadAuthed()`** (`lib/api.js`): lädt Dateien **per fetch mit Bearer-Token**
+  und speichert sie als Blob – korrekt auch bei gated Routen. Buttons „⬇ CSV" an
+  ROI-Panel (Unternehmen) und MRR-Panel (Dashboard); der **DATEV-Button** nutzt
+  jetzt ebenfalls `downloadAuthed` (**401-Bug behoben**).
+- Verifiziert: **36/36 API-Checks** (inkl. „CSV ohne Login → 401"), DATEV mit Token
+  → 200, und der **Browser-Download** wurde per Playwright real ausgelöst
+  (`uebernahme-roi.csv`, Header + Zeilen).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

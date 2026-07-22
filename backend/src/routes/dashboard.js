@@ -96,70 +96,108 @@ router.get('/workload', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// --- geteilte Berechnungen (JSON- und CSV-Endpunkte nutzen dieselbe Logik) ---
+async function computeMrrTrend(months) {
+  const rows = await query(`
+    WITH m AS (
+      SELECT date_trunc('month', d)::date AS month_start
+      FROM generate_series(
+        date_trunc('month', CURRENT_DATE) - (($1::int - 1) * interval '1 month'),
+        date_trunc('month', CURRENT_DATE),
+        interval '1 month') d
+    )
+    SELECT to_char(m.month_start, 'YYYY-MM') AS month,
+           COALESCE(SUM(c.value_monthly) FILTER (
+             WHERE c.start_date <= (m.month_start + interval '1 month' - interval '1 day')
+               AND (c.end_date IS NULL OR c.end_date >= m.month_start)
+           ), 0)::numeric AS mrr
+    FROM m LEFT JOIN contracts c ON TRUE
+    GROUP BY m.month_start ORDER BY m.month_start`, [months]);
+  const series = rows.map((r) => ({ month: r.month, mrr: Number(r.mrr) }));
+  const current = series.at(-1)?.mrr || 0;
+  const yearAgo = series.length >= 13 ? series.at(-13).mrr : (series[0]?.mrr || 0);
+  const growthPct = yearAgo > 0 ? Math.round(((current - yearAgo) / yearAgo) * 1000) / 10 : null;
+  return { months: series, current_mrr: current, yoy_growth_pct: growthPct };
+}
+
+async function computeMergerRoi() {
+  const ASK_MULTIPLE = Number(process.env.MERGER_ASK_MULTIPLE) || 4;   // Kaufpreis ≈ 4× EBITDA
+  const SYNERGY_RATE = Number(process.env.MERGER_SYNERGY_RATE) || 0.05; // 5% des Umsatzes
+  const targets = await query(`
+    SELECT id, name, status, annual_revenue, ebitda, purchase_price, employee_count
+    FROM companies
+    WHERE is_own = FALSE AND status <> 'verworfen'
+      AND ebitda IS NOT NULL AND ebitda > 0 AND annual_revenue IS NOT NULL`);
+  const round = (n, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
+  const rows = targets.map((t) => {
+    const ebitda = Number(t.ebitda);
+    const revenue = Number(t.annual_revenue);
+    const priceEstimated = t.purchase_price == null;
+    const price = priceEstimated ? ebitda * ASK_MULTIPLE : Number(t.purchase_price);
+    const synergyEbitda = revenue * SYNERGY_RATE;
+    return {
+      id: t.id, name: t.name, status: t.status,
+      annual_revenue: revenue, ebitda, employee_count: t.employee_count,
+      price, price_estimated: priceEstimated,
+      ebitda_multiple: round(price / ebitda, 1),
+      roi_pct: round((ebitda / price) * 100, 1),
+      payback_years: round(price / ebitda, 1),
+      synergy_ebitda: Math.round(synergyEbitda),
+      roi_with_synergy_pct: round(((ebitda + synergyEbitda) / price) * 100, 1),
+      payback_with_synergy_years: round(price / (ebitda + synergyEbitda), 1),
+    };
+  }).sort((a, b) => b.roi_with_synergy_pct - a.roi_with_synergy_pct);
+  return { assumptions: { ask_multiple: ASK_MULTIPLE, synergy_rate: SYNERGY_RATE }, targets: rows };
+}
+
+// CSV-Helfer: Excel-tauglich (UTF-8-BOM, CRLF, Semikolon-getrennt für DE-Excel).
+function toCsv(headers, rows) {
+  const esc = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(';'), ...rows.map((r) => r.map(esc).join(';'))];
+  return '﻿' + lines.join('\r\n') + '\r\n';
+}
+function sendCsv(res, filename, csv) {
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csv);
+}
+
 // MRR-Entwicklung: monatlich wiederkehrender Umsatz über die Zeit, direkt aus den
 // Vertragslaufzeiten (start_date/end_date) berechnet – zeigt Wachstum & Auslaufen.
 router.get('/mrr-trend', async (req, res, next) => {
   try {
     const months = Math.min(Math.max(parseInt(req.query.months, 10) || 18, 3), 36);
-    const rows = await query(`
-      WITH m AS (
-        SELECT date_trunc('month', d)::date AS month_start
-        FROM generate_series(
-          date_trunc('month', CURRENT_DATE) - (($1::int - 1) * interval '1 month'),
-          date_trunc('month', CURRENT_DATE),
-          interval '1 month') d
-      )
-      SELECT to_char(m.month_start, 'YYYY-MM') AS month,
-             COALESCE(SUM(c.value_monthly) FILTER (
-               WHERE c.start_date <= (m.month_start + interval '1 month' - interval '1 day')
-                 AND (c.end_date IS NULL OR c.end_date >= m.month_start)
-             ), 0)::numeric AS mrr
-      FROM m LEFT JOIN contracts c ON TRUE
-      GROUP BY m.month_start ORDER BY m.month_start`, [months]);
-    const series = rows.map((r) => ({ month: r.month, mrr: Number(r.mrr) }));
-    const current = series.at(-1)?.mrr || 0;
-    const yearAgo = series.length >= 13 ? series.at(-13).mrr : (series[0]?.mrr || 0);
-    const growthPct = yearAgo > 0 ? Math.round(((current - yearAgo) / yearAgo) * 1000) / 10 : null;
-    res.json({ months: series, current_mrr: current, yoy_growth_pct: growthPct });
+    res.json(await computeMrrTrend(months));
+  } catch (e) { next(e); }
+});
+router.get('/mrr-trend.csv', async (req, res, next) => {
+  try {
+    const months = Math.min(Math.max(parseInt(req.query.months, 10) || 18, 3), 36);
+    const { months: series } = await computeMrrTrend(months);
+    sendCsv(res, 'mrr-entwicklung.csv',
+      toCsv(['Monat', 'MRR_EUR'], series.map((m) => [m.month, m.mrr])));
   } catch (e) { next(e); }
 });
 
 // Übernahme-ROI / Synergie-Rechner: bewertet die Ziel-Firmen der Pipeline.
 // Wo kein Kaufpreis feststeht, wird er aus einem EBITDA-Multiple geschätzt.
-// Synergie = Anteil des Zielumsatzes, der nach Integration als EBITDA-Uplift
-// wirkt (weniger Overhead). Beides über Umgebung konfigurierbar.
+// Synergie = Anteil des Zielumsatzes, der nach Integration als EBITDA-Uplift wirkt.
 router.get('/merger-roi', async (req, res, next) => {
+  try { res.json(await computeMergerRoi()); } catch (e) { next(e); }
+});
+router.get('/merger-roi.csv', async (req, res, next) => {
   try {
-    const ASK_MULTIPLE = Number(process.env.MERGER_ASK_MULTIPLE) || 4;   // Kaufpreis ≈ 4× EBITDA
-    const SYNERGY_RATE = Number(process.env.MERGER_SYNERGY_RATE) || 0.05; // 5% des Umsatzes
-    const targets = await query(`
-      SELECT id, name, status, annual_revenue, ebitda, purchase_price, employee_count
-      FROM companies
-      WHERE is_own = FALSE AND status <> 'verworfen'
-        AND ebitda IS NOT NULL AND ebitda > 0 AND annual_revenue IS NOT NULL`);
-    const round = (n, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
-    const rows = targets.map((t) => {
-      const ebitda = Number(t.ebitda);
-      const revenue = Number(t.annual_revenue);
-      const priceEstimated = t.purchase_price == null;
-      const price = priceEstimated ? ebitda * ASK_MULTIPLE : Number(t.purchase_price);
-      const synergyEbitda = revenue * SYNERGY_RATE;
-      return {
-        id: t.id, name: t.name, status: t.status,
-        annual_revenue: revenue, ebitda, employee_count: t.employee_count,
-        price, price_estimated: priceEstimated,
-        ebitda_multiple: round(price / ebitda, 1),
-        roi_pct: round((ebitda / price) * 100, 1),
-        payback_years: round(price / ebitda, 1),
-        synergy_ebitda: Math.round(synergyEbitda),
-        roi_with_synergy_pct: round(((ebitda + synergyEbitda) / price) * 100, 1),
-        payback_with_synergy_years: round(price / (ebitda + synergyEbitda), 1),
-      };
-    }).sort((a, b) => b.roi_with_synergy_pct - a.roi_with_synergy_pct);
-    res.json({
-      assumptions: { ask_multiple: ASK_MULTIPLE, synergy_rate: SYNERGY_RATE },
-      targets: rows,
-    });
+    const { targets } = await computeMergerRoi();
+    sendCsv(res, 'uebernahme-roi.csv', toCsv(
+      ['Ziel', 'Status', 'Umsatz_EUR', 'EBITDA_EUR', 'Kaufpreis_EUR', 'Preis_geschaetzt',
+        'EBITDA_Multiple', 'ROI_Prozent', 'Amortisation_Jahre', 'Synergie_EBITDA_EUR',
+        'ROI_inkl_Synergie_Prozent', 'Amortisation_inkl_Synergie_Jahre'],
+      targets.map((t) => [t.name, t.status, t.annual_revenue, t.ebitda, t.price,
+        t.price_estimated ? 'ja' : 'nein', t.ebitda_multiple, t.roi_pct, t.payback_years,
+        t.synergy_ebitda, t.roi_with_synergy_pct, t.payback_with_synergy_years])));
   } catch (e) { next(e); }
 });
 

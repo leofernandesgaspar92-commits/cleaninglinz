@@ -146,6 +146,19 @@ check('Dashboard /mrr-trend (MRR-Verlauf)',
   && typeof dMrr.body.current_mrr === 'number',
   `current=${dMrr.body.current_mrr}, yoy=${dMrr.body.yoy_growth_pct}`);
 
+// CSV-Report-Exports (authentifiziert)
+const csvGet = (p, tok = TOKEN) => fetch(B + p, { headers: tok ? { Authorization: `Bearer ${tok}` } : {} })
+  .then(async (r) => ({ status: r.status, ctype: r.headers.get('content-type') || '', text: await r.text() }));
+const roiCsv = await csvGet('/dashboard/merger-roi.csv');
+check('CSV /merger-roi.csv (Header + text/csv)',
+  roiCsv.status === 200 && roiCsv.ctype.includes('text/csv') && roiCsv.text.includes('ROI_inkl_Synergie_Prozent'));
+const mrrCsv = await csvGet('/dashboard/mrr-trend.csv?months=6');
+check('CSV /mrr-trend.csv (6 Monate + Header)',
+  mrrCsv.status === 200 && mrrCsv.ctype.includes('text/csv')
+  && mrrCsv.text.split('\r\n').filter(Boolean).length === 7); // 1 Kopf + 6 Zeilen
+const roiCsvNoAuth = await csvGet('/dashboard/merger-roi.csv', null);
+check('CSV-Export ohne Login -> 401', roiCsvNoAuth.status === 401);
+
 const dRoi = await get('/dashboard/merger-roi');
 const roiTop = dRoi.body?.targets?.[0];
 check('Dashboard /merger-roi (Übernahme-ROI)',

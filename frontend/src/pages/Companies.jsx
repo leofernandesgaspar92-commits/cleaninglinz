@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, euro, STATUS_LABELS } from '../lib/api.js';
+import { api, euro, STATUS_LABELS, downloadAuthed } from '../lib/api.js';
 import { canWrite } from '../lib/auth.js';
 
 const COLUMNS = ['ziel', 'due_diligence', 'verhandlung', 'vertrag', 'uebernommen', 'integriert'];
@@ -45,9 +45,13 @@ export default function Companies() {
         <div style={{ marginBottom: '1.2rem' }}>
           <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>💰 Übernahme-ROI &amp; Synergien</span>
-            <span className="muted" style={{ fontSize: '.75rem' }}>
-              Annahmen: Kaufpreis ≈ {roi.assumptions.ask_multiple}× EBITDA (falls offen) ·
-              Synergie {Math.round(roi.assumptions.synergy_rate * 100)}% vom Umsatz
+            <span style={{ display: 'flex', gap: '.6rem', alignItems: 'center' }}>
+              <span className="muted" style={{ fontSize: '.75rem' }}>
+                Annahmen: Kaufpreis ≈ {roi.assumptions.ask_multiple}× EBITDA (falls offen) ·
+                Synergie {Math.round(roi.assumptions.synergy_rate * 100)}% vom Umsatz
+              </span>
+              <button style={{ fontSize: '.75rem', padding: '.2rem .5rem' }}
+                onClick={() => downloadAuthed('/dashboard/merger-roi.csv', 'uebernahme-roi.csv')}>⬇ CSV</button>
             </span>
           </h3>
           <div className="card" style={{ padding: '.2rem', overflowX: 'auto' }}>

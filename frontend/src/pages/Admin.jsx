@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { authApi, track } from '../lib/auth.js';
+import { downloadAuthed } from '../lib/api.js';
 import { toast } from '../components/Toast.jsx';
 
 export default function Admin({ user }) {
@@ -47,7 +48,8 @@ export default function Admin({ user }) {
     <div>
       <div className="page-head">
         <h1>Admin · Systemüberwachung</h1>
-        <a href="/api/datev/buchungsstapel.csv"><button title="Buchungsstapel im DATEV-Format (EXTF)">⬇ DATEV-Export</button></a>
+        <button title="Buchungsstapel im DATEV-Format (EXTF)"
+          onClick={() => downloadAuthed('/datev/buchungsstapel.csv', 'datev-buchungsstapel.csv')}>⬇ DATEV-Export</button>
       </div>
 
       {user && user.role === 'admin' && !user.mfa_enabled && (

@@ -48,6 +48,21 @@ export const api = {
   },
 };
 
+// Authentifizierter Datei-Download: ein simpler <a href> sendet keinen Bearer-Token,
+// darum per fetch laden und als Blob speichern.
+export async function downloadAuthed(path, filename) {
+  const res = await fetch(BASE + path, { headers: authHeaders() });
+  if (res.status === 401) { onUnauthorized(); throw new Error('Nicht authentifiziert'); }
+  if (res.status === 403) { window.dispatchEvent(new CustomEvent('leco:forbidden', { detail: { message: 'Keine Berechtigung' } })); throw new Error('Keine Berechtigung'); }
+  if (!res.ok) throw new Error(`Download fehlgeschlagen (HTTP ${res.status})`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename || 'export';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
 // Anzeige-Helfer
 export const euro = (n) =>
   n == null ? '–' : new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);

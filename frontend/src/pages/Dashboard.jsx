@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
-import { api, euro } from '../lib/api.js';
+import { api, euro, downloadAuthed } from '../lib/api.js';
 
 const LINZ = [48.30639, 14.28611];
 
@@ -174,6 +174,8 @@ function MrrTrend({ data }) {
             <span className={`badge ${up ? 'ok' : 'geplant'}`} title="Veränderung ggü. Vorjahr">
               {up ? '▲' : '▼'} {Math.abs(yoy)}% YoY
             </span>)}
+          <button style={{ fontSize: '.72rem', padding: '.15rem .45rem' }}
+            onClick={() => downloadAuthed('/dashboard/mrr-trend.csv?months=18', 'mrr-entwicklung.csv')}>⬇ CSV</button>
         </span>
       </h3>
       <div className="card" style={{ padding: '.8rem' }}>
