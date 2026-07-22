@@ -1,0 +1,75 @@
+{
+  "name": "leco-desktop",
+  "productName": "Leco",
+  "version": "1.0.0",
+  "description": "Leco – Reinigungs-Imperium Linz (Windows-Desktop-App)",
+  "author": "Leco Cleaning",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "prepack:app": "node scripts/prepack.mjs",
+    "dist": "npm run prepack:app && electron-builder --win",
+    "dist:portable": "npm run prepack:app && electron-builder --win portable",
+    "dist:msix": "npm run prepack:app && electron-builder --win appx",
+    "pack:dir": "npm run prepack:app && electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "at.leco.desktop",
+    "productName": "Leco",
+    "copyright": "© Leco Cleaning",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "build/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend",
+        "to": "backend",
+        "filter": ["**/*", "!**/node_modules/.cache/**", "!.env", "!scripts/backup*"]
+      },
+      {
+        "from": "../frontend/dist",
+        "to": "frontend/dist"
+      }
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] },
+        { "target": "appx", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Leco",
+      "installerLanguages": ["de_DE"],
+      "language": "1031"
+    },
+    "appx": {
+      "applicationId": "LecoDesktop",
+      "identityName": "LecoCleaning.Leco",
+      "publisher": "CN=Leco Cleaning",
+      "publisherDisplayName": "Leco Cleaning",
+      "displayName": "Leco",
+      "backgroundColor": "#0e1117"
+    }
+  }
+}

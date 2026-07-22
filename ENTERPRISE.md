@@ -125,6 +125,30 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: nginx-Konfigurationen strukturell geprüft (Klammern balanciert,
   Kern-Direktiven vorhanden), docker-compose als gültiges YAML geparst
 
+### 14. Native Windows-Desktop-App (Electron / MSIX)
+- **Echte Windows-App** unter `desktop/` (Electron): Doppelklick startet Leco –
+  kein Terminal, keine Node-Installation beim Endnutzer. Der Hauptprozess
+  (`main.js`) startet das Backend als Kindprozess (Port 4137, `SERVE_FRONTEND=1`),
+  wartet auf `/api/health` und öffnet die Oberfläche im nativen Fenster
+- Weil das **Backend das gebaute Frontend selbst ausliefert**
+  (`SERVE_FRONTEND=1` → `express.static` + SPA-Fallback in `server.js`),
+  funktioniert der relative API-Pfad `/api` ohne CORS/Proxy – **dieselbe
+  Codebasis wie im Web**
+- Sicherheit nach Electron-Best-Practice: `contextIsolation`, `sandbox`,
+  kein `nodeIntegration`, schmale `preload.cjs`-Brücke, Single-Instance-Lock,
+  externe Links im Standardbrowser; natives Menü mit Tastenkürzeln (Strg+R,
+  F12, Zoom, Vollbild)
+- **Paketierung** via electron-builder (`package.json`): NSIS-Installer (.exe,
+  deutsch, Desktop-/Startmenü-Verknüpfung), **Portable-.exe** und **MSIX/appx**
+  (Microsoft Store / Intune). `scripts/prepack.mjs` baut vorher das Frontend und
+  installiert die Backend-Prod-Abhängigkeiten; Backend+Frontend werden als
+  `extraResources` gebündelt
+- Marken-Icon (`build/icon.png`, 512×512) abhängigkeitsfrei per `make-icon.mjs`
+  erzeugt; electron-builder leitet daraus `.ico` und MSIX-Kacheln ab
+- Verifiziert: `main.js`/`preload.cjs`/`prepack.mjs` syntaxgeprüft, `package.json`
+  valides JSON, `server.js` (mit Static-Serving) syntaxgeprüft, Icon als gültiges
+  512×512-PNG erzeugt
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
@@ -173,4 +197,5 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 - **Live-CD-Pipeline** (automatischer Push nach Staging/Prod – das
   Deployment-Setup mit nginx-Load-Balancing/Docker-Compose ist bereits vorhanden,
   CI läuft)
-- **Native Windows-Paketierung** (Electron/MSIX) – PWA-Installierbarkeit ist bereits vorhanden
+- **Code-Signing / Store-Veröffentlichung** der Windows-App (die Electron/MSIX-
+  Paketierung ist vorhanden; für den Store fehlt nur ein Signaturzertifikat)

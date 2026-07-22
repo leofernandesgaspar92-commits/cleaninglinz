@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 
 import companies from './routes/companies.js';
 import customers from './routes/customers.js';
@@ -65,6 +68,21 @@ app.use('/api/jobs', jobs);
 app.use('/api/dashboard', dashboard);
 app.use('/api/acquisitions', acquisitions);
 app.use('/api/import', importRouter);
+
+// Statisches Frontend ausliefern (für die Electron-Desktop-App bzw. Single-Port-
+// Deployment). Aktiv, wenn SERVE_FRONTEND gesetzt ist und ein Build existiert –
+// dann funktioniert der relative API-Pfad `/api` ohne CORS/Proxy.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const distDir = process.env.FRONTEND_DIST || resolve(__dirname, '../../frontend/dist');
+if (process.env.SERVE_FRONTEND && existsSync(distDir)) {
+  app.use(express.static(distDir));
+  // SPA-Fallback: alle Nicht-API-GETs auf index.html (Client-Routing).
+  app.get(/^\/(?!api\/|metrics|agi\/).*/, (req, res, next) => {
+    if (req.method !== 'GET') return next();
+    res.sendFile(resolve(distDir, 'index.html'));
+  });
+  console.log(`Frontend statisch ausgeliefert aus ${distDir}`);
+}
 
 // Zentrale Fehlerbehandlung – protokolliert in error_log für das Admin-Monitoring.
 app.use((err, req, res, next) => {
