@@ -5,6 +5,7 @@ import {
   generateTotpSecret, otpauthURL, verifyTotp,
 } from '../lib/auth.js';
 import { audit, requireAuth, requireRole } from '../lib/security.js';
+import { notify } from '../lib/notify.js';
 
 const router = Router();
 const MAX_FAILED = 5;
@@ -48,6 +49,7 @@ router.post('/register', async (req, res, next) => {
       [email, full_name ?? null, assignedRole, hashPassword(password)]
     );
     await audit(req, { action: 'user_registered', entity: 'users', entityId: user.id, detail: { email, role: assignedRole } });
+    notify({ level: 'success', title: 'Neuer Benutzer', message: `${email} wurde als ${assignedRole} angelegt.` });
     res.status(201).json(publicUser(user));
   } catch (e) { next(e); }
 });

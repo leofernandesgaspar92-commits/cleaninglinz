@@ -50,6 +50,15 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   `POST /api/queue/:type` (z.B. `export_customers`), `GET /api/queue/job/:id`.
   Frontend: „⬇ Export (Hintergrund)" in der Kundenliste mit Fortschritt via Toast
 
+### 9. Benachrichtigungen (Slack / Teams / In-App)
+- `lib/notify.js`: schreibt jede Meldung in den **In-App-Feed** (Tabelle
+  `notifications`) und pusht sie zusätzlich an **Slack**/**Teams** Incoming
+  Webhooks (`SLACK_WEBHOOK_URL` / `TEAMS_WEBHOOK_URL`)
+- Ausgelöst bei sinnvollen Ereignissen (neuer Benutzer, Hintergrund-Job
+  fertig/fehler); Admin-Feed + „Test senden" unter `GET/POST /api/admin/notifications`
+- Verifiziert: Feed-Speicherung und Job-Auslösung ohne Webhook (In-App), Push
+  aktiv sobald ein Webhook gesetzt ist
+
 ### 8. KI-Vertragsanalyse (Merger-Integration)
 - `POST /api/contract-ai/analyze` – extrahiert aus Vertragstext automatisch
   Vertragspartner, Laufzeit, **Kündigungsfrist**, Auto-Verlängerung, Frequenz,
@@ -102,7 +111,7 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 - **Load Balancing** (horizontale Skalierung; Caching ist bereits vorhanden,
   Redis wird über `REDIS_URL` aktiviert)
 - **Grafana-Dashboards** auf Basis des vorhandenen `/metrics`-Endpunkts
-- **Datev-/Buchhaltungs-API**, **Outlook/Exchange-Kalender**, **Slack/Teams**
+- **Datev-/Buchhaltungs-API**, **Outlook/Exchange-Kalender** (Slack/Teams ist vorhanden)
 - **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)
 - **CD** (Deployment nach Staging/Prod – CI ist bereits vorhanden)
 - **Native Windows-Paketierung** (Electron/MSIX) – PWA-Installierbarkeit ist bereits vorhanden

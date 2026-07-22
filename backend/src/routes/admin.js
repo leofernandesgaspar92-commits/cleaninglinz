@@ -1,10 +1,23 @@
 import { Router } from 'express';
 import { query, one } from '../lib/db.js';
 import { requireAuth, requireRole } from '../lib/security.js';
+import { notify, notifyStatus, recentNotifications } from '../lib/notify.js';
 
 const router = Router();
 // Alle Admin-Endpunkte erfordern Authentifizierung + Admin-Rolle.
 router.use(requireAuth, requireRole('admin'));
+
+// Benachrichtigungen: Feed, Konfigurationsstatus, Test-Versand
+router.get('/notifications', async (req, res, next) => {
+  try { res.json({ status: notifyStatus(), items: await recentNotifications() }); } catch (e) { next(e); }
+});
+router.post('/notify/test', async (req, res, next) => {
+  try {
+    const n = await notify({ level: 'info', title: 'Testbenachrichtigung',
+      message: `Ausgelöst von ${req.user.email}. Slack/Teams greift, sobald ein Webhook gesetzt ist.` });
+    res.json(n);
+  } catch (e) { next(e); }
+});
 
 // Audit-Log (Logins, Datenänderungen, MFA-Ereignisse)
 router.get('/audit', async (req, res, next) => {

@@ -1,22 +1,30 @@
 import { useEffect, useState, useCallback } from 'react';
 import { authApi, track } from '../lib/auth.js';
+import { toast } from '../components/Toast.jsx';
 
 export default function Admin() {
-  const [data, setData] = useState({ overview: null, audit: [], errors: [], users: [], heatmap: null });
+  const [data, setData] = useState({ overview: null, audit: [], errors: [], users: [], heatmap: null, notif: { status: {}, items: [] } });
   const [err, setErr] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const [overview, audit, errors, users, heatmap] = await Promise.all([
+      const [overview, audit, errors, users, heatmap, notif] = await Promise.all([
         authApi.get('/admin/overview'),
         authApi.get('/admin/audit?limit=25'),
         authApi.get('/admin/errors'),
         authApi.get('/admin/users'),
         authApi.get('/analytics/heatmap?days=30'),
+        authApi.get('/admin/notifications'),
       ]);
-      setData({ overview, audit, errors, users, heatmap }); setErr(null);
+      setData({ overview, audit, errors, users, heatmap, notif }); setErr(null);
     } catch (e) { setErr(e.message); }
   }, []);
+
+  async function testNotify() {
+    await authApi.post('/admin/notify/test');
+    toast.success('Testbenachrichtigung gesendet', 'Im Feed sichtbar; Slack/Teams bei konfiguriertem Webhook.');
+    load();
+  }
 
   useEffect(() => { track('admin.view'); load(); const t = setInterval(load, 8000); return () => clearInterval(t); }, [load]);
 
@@ -81,6 +89,27 @@ export default function Admin() {
             {(data.heatmap?.byFeature || []).length === 0
               ? <div className="muted">Noch keine Nutzungsdaten.</div>
               : <HeatBars items={data.heatmap.byFeature} />}
+          </div>
+
+          <h3 style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>🔔 Benachrichtigungen</span>
+            <span style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
+              <span className={`badge ${data.notif.status?.slack ? 'ok' : 'geplant'}`}>Slack {data.notif.status?.slack ? 'AN' : 'AUS'}</span>
+              <span className={`badge ${data.notif.status?.teams ? 'ok' : 'geplant'}`}>Teams {data.notif.status?.teams ? 'AN' : 'AUS'}</span>
+              <button onClick={testNotify} style={{ fontSize: '.75rem', padding: '.2rem .5rem' }}>Test senden</button>
+            </span>
+          </h3>
+          <div className="card" style={{ padding: '.2rem', maxHeight: 220, overflow: 'auto', marginBottom: '1rem' }}>
+            <table><tbody>
+              {data.notif.items.length === 0 && <tr><td className="muted">Keine.</td></tr>}
+              {data.notif.items.map((n) => (
+                <tr key={n.id}>
+                  <td><span className={`badge ${n.level === 'error' ? 'gekuendigt' : n.level === 'warning' ? 'laeuft_aus' : 'ok'}`}>{n.level}</span></td>
+                  <td><b style={{ fontSize: '.82rem' }}>{n.title}</b><div className="muted" style={{ fontSize: '.75rem' }}>{n.message}</div></td>
+                  <td className="muted" style={{ fontSize: '.72rem' }}>{n.created_at?.slice(11, 19)}</td>
+                </tr>
+              ))}
+            </tbody></table>
           </div>
 
           <h3 style={{ marginTop: '1rem' }}>⚠ Fehler-Log</h3>

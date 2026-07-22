@@ -53,6 +53,19 @@ CREATE TABLE IF NOT EXISTS analytics_events (
 CREATE INDEX IF NOT EXISTS idx_analytics_feature ON analytics_events(feature);
 CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics_events(created_at DESC);
 
+-- --- Benachrichtigungen (In-App-Feed + Slack/Teams-Versand) -----------------
+CREATE TABLE IF NOT EXISTS notifications (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    level       TEXT NOT NULL DEFAULT 'info' CHECK (level IN ('info','success','warning','error')),
+    title       TEXT NOT NULL,
+    message     TEXT,
+    meta        JSONB,
+    sent_slack  BOOLEAN NOT NULL DEFAULT FALSE,
+    sent_teams  BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_notif_created ON notifications(created_at DESC);
+
 -- --- Asynchrone Job-Queue (Hintergrundverarbeitung, z.B. Exporte) -----------
 CREATE TABLE IF NOT EXISTS job_queue (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

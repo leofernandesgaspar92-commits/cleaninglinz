@@ -54,6 +54,8 @@ export const openapiSpec = {
     '/api/admin/errors': { get: { tags: ['Admin'], summary: 'Fehler-Log', security: bearer, responses: { 200: { description: 'Einträge' } } } },
     '/api/admin/users': { get: { tags: ['Admin'], summary: 'Benutzer auflisten', security: bearer, responses: { 200: { description: 'Nutzer' } } } },
     '/api/admin/users/{id}/role': { patch: { tags: ['Admin'], summary: 'Rolle ändern', security: bearer, parameters: [idParam], requestBody: reqBody({ role: 'string' }), responses: { 200: { description: 'OK' } } } },
+    '/api/admin/notifications': { get: { tags: ['Admin'], summary: 'Benachrichtigungs-Feed + Slack/Teams-Status', security: bearer, responses: { 200: { description: 'Feed' } } } },
+    '/api/admin/notify/test': { post: { tags: ['Admin'], summary: 'Testbenachrichtigung senden', security: bearer, responses: { 200: { description: 'Gesendet' } } } },
 
     '/api/analytics/track': { post: { tags: ['Analytics'], summary: 'Funktionsnutzung erfassen', requestBody: reqBody({ feature: 'string', action: 'string' }), responses: { 204: { description: 'Erfasst' } } } },
     '/api/analytics/heatmap': { get: { tags: ['Analytics'], summary: 'Nutzungs-Heatmap', security: bearer, responses: { 200: { description: 'Aggregat' } } } },

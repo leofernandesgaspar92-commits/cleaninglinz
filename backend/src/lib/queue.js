@@ -5,6 +5,7 @@
 //  werden beim Start erneut aufgenommen).
 // ============================================================================
 import { query, one } from './db.js';
+import { notify } from './notify.js';
 
 const handlers = new Map();
 export function register(type, fn) { handlers.set(type, fn); }
@@ -42,9 +43,11 @@ async function processNext() {
         const result = await handler(job.params || {}, setProgress);
         await query(`UPDATE job_queue SET status='fertig', progress=100, result=$2, finished_at=now() WHERE id=$1`,
           [job.id, JSON.stringify(result ?? {})]);
+        notify({ level: 'success', title: `Job fertig: ${job.type}`, message: JSON.stringify(result ?? {}).slice(0, 200) });
       } catch (e) {
         await query(`UPDATE job_queue SET status='fehler', error=$2, finished_at=now() WHERE id=$1`,
           [job.id, e.message]);
+        notify({ level: 'error', title: `Job fehlgeschlagen: ${job.type}`, message: e.message });
       }
     }
   } finally { running = false; }
