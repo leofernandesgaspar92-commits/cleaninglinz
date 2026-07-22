@@ -233,6 +233,20 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **30/30 API-Checks** – `mitarbeiter` liest `200`, Schreiben/Löschen
   `403`; admin/manager unverändert.
 
+### 21. Rollenbewusste UI – Frontend-Abschluss zum RBAC (autonome Agenten-Entscheidung)
+- **UX-Befund**: Seit dem RBAC liefert das Backend `403`, aber die Oberfläche zeigte
+  weiter Schreib-Controls → rohe Fehlermeldungen.
+- **Rollenerkennung** (`lib/auth.js`): `getRole()` liest die Rolle aus dem JWT
+  (`getRole`/`canWrite`/`canDelete` – reine UI-Steuerung, Autorität bleibt der Server).
+- **Freundliche 403-Meldung**: `lib/api.js` und `lib/auth.js` feuern bei `403` ein
+  `leco:forbidden`-Event; `App.jsx` zeigt dafür einen Toast „Keine Berechtigung"
+  (statt eines rohen Fehlers) – **global** für jede blockierte Aktion.
+- **Rollenabhängige Navigation/Controls**: „Import" nur ab „manager"; im
+  Unternehmens-Tracker sind **Drag & Drop** und „⚡ Neue Übernahme" nur ab „manager"
+  aktiv, sonst erscheint ein **Nur-Lese-Hinweis**.
+- Verifiziert: Frontend-Build grün; als „mitarbeiter" live geprüft – kein Import in
+  der Navigation, kein „Neue Übernahme"-Button, Nur-Lese-Hinweis, Karten nicht ziehbar.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

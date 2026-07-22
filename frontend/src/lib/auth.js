@@ -6,6 +6,20 @@ export const setToken = (t) => localStorage.setItem(KEY, t);
 export const clearToken = () => localStorage.removeItem(KEY);
 export const isLoggedIn = () => !!getToken();
 
+// Rolle aus dem JWT lesen (nur zur UI-Steuerung; die Autorität bleibt der Server).
+const ROLE_RANK = { admin: 3, manager: 2, mitarbeiter: 1 };
+export function getRole() {
+  const t = getToken();
+  if (!t) return null;
+  try {
+    const payload = JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload.role || null;
+  } catch { return null; }
+}
+export const roleAtLeast = (min) => (ROLE_RANK[getRole()] || 0) >= (ROLE_RANK[min] || 99);
+export const canWrite = () => roleAtLeast('manager');   // Schreiben ab manager
+export const canDelete = () => roleAtLeast('admin');    // Löschen nur admin
+
 async function req(path, options = {}) {
   const token = getToken();
   const res = await fetch('/api' + path, {
@@ -13,6 +27,10 @@ async function req(path, options = {}) {
     ...options,
   });
   if (res.status === 401) { clearToken(); }
+  if (res.status === 403) {
+    const msg = await res.clone().json().then((b) => b.error).catch(() => 'Keine Berechtigung');
+    window.dispatchEvent(new CustomEvent('leco:forbidden', { detail: { message: msg } }));
+  }
   return res;
 }
 

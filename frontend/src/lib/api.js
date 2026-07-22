@@ -22,7 +22,9 @@ async function req(path, options = {}) {
   if (res.status === 401) { onUnauthorized(); throw new Error('Nicht authentifiziert'); }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${res.status}`);
+    const msg = body.error || `HTTP ${res.status}`;
+    if (res.status === 403) window.dispatchEvent(new CustomEvent('leco:forbidden', { detail: { message: msg } }));
+    throw new Error(msg);
   }
   if (res.status === 204) return null;
   return res.json();
@@ -37,7 +39,11 @@ export const api = {
   upload: async (p, formData) => {
     const res = await fetch(BASE + p, { method: 'POST', headers: authHeaders(), body: formData });
     if (res.status === 401) { onUnauthorized(); throw new Error('Nicht authentifiziert'); }
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+    if (!res.ok) {
+      const msg = (await res.json().catch(() => ({}))).error || `HTTP ${res.status}`;
+      if (res.status === 403) window.dispatchEvent(new CustomEvent('leco:forbidden', { detail: { message: msg } }));
+      throw new Error(msg);
+    }
     return res.json();
   },
 };

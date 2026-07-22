@@ -12,7 +12,7 @@ import Admin from './pages/Admin.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
 import { Toasts, toast } from './components/Toast.jsx';
 import ProgressBar from './components/ProgressBar.jsx';
-import { me, clearToken, track } from './lib/auth.js';
+import { me, clearToken, track, roleAtLeast } from './lib/auth.js';
 
 const NAV = [
   { to: '/', label: 'Dashboard', ico: '🗺️', end: true },
@@ -20,7 +20,7 @@ const NAV = [
   { to: '/kunden', label: 'Kunden', ico: '📋' },
   { to: '/mitarbeiter', label: 'Mitarbeiter', ico: '👷' },
   { to: '/uebernahme', label: 'Übernahme', ico: '⚡' },
-  { to: '/import', label: 'Import', ico: '📥' },
+  { to: '/import', label: 'Import', ico: '📥', minRole: 'manager' },
   { to: '/ki-team', label: 'KI-Team', ico: '🤖' },
 ];
 
@@ -31,6 +31,13 @@ export default function App() {
 
   const refresh = () => me().then((u) => { setUser(u); setReady(true); });
   useEffect(() => { refresh(); }, []);
+  // Zentrale, freundliche Rückmeldung bei fehlender Berechtigung (403).
+  useEffect(() => {
+    const onForbidden = (e) => toast.warning('Keine Berechtigung',
+      e.detail?.message || 'Diese Aktion ist deiner Rolle nicht erlaubt.');
+    window.addEventListener('leco:forbidden', onForbidden);
+    return () => window.removeEventListener('leco:forbidden', onForbidden);
+  }, []);
   // Seitenaufrufe für die Nutzungs-Heatmap erfassen.
   useEffect(() => { track(`page${location.pathname.replace(/\//g, '.') || '.home'}`); }, [location.pathname]);
 
@@ -62,7 +69,7 @@ export default function App() {
         <div className="brand">Le<span>co</span></div>
         <div className="tagline">Reinigungs-Imperium · Linz</div>
         <nav className="nav">
-          {NAV.map((n) => (
+          {NAV.filter((n) => !n.minRole || roleAtLeast(n.minRole)).map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end}
               className={({ isActive }) => (isActive ? 'active' : '')}>
               <span className="ico">{n.ico}</span>{n.label}

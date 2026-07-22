@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, euro, STATUS_LABELS } from '../lib/api.js';
+import { canWrite } from '../lib/auth.js';
 
 const COLUMNS = ['ziel', 'due_diligence', 'verhandlung', 'vertrag', 'uebernommen', 'integriert'];
 
@@ -9,6 +10,7 @@ export default function Companies() {
   const [drag, setDrag] = useState(null);
   const [err, setErr] = useState(null);
   const nav = useNavigate();
+  const writable = canWrite(); // ab „manager": Pipeline per Drag & Drop änderbar
 
   const load = () => api.get('/companies').then(setCompanies).catch((e) => setErr(e.message));
   useEffect(() => { load(); }, []);
@@ -27,9 +29,12 @@ export default function Companies() {
       <div className="page-head">
         <div>
           <h1>Unternehmens-Tracker</h1>
-          <div className="muted">Rockefeller-Modus: Übernahme-Pipeline per Drag & Drop steuern.</div>
+          <div className="muted">
+            {writable ? 'Rockefeller-Modus: Übernahme-Pipeline per Drag & Drop steuern.'
+              : 'Nur-Lese-Ansicht – Pipeline-Änderungen ab Rolle „Manager".'}
+          </div>
         </div>
-        <button className="primary" onClick={() => nav('/uebernahme')}>⚡ Neue Übernahme</button>
+        {writable && <button className="primary" onClick={() => nav('/uebernahme')}>⚡ Neue Übernahme</button>}
       </div>
 
       {err && <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: '1rem' }}>{err}</div>}
@@ -45,8 +50,8 @@ export default function Companies() {
               {items.map((c) => (
                 <div key={c.id}
                   className={`kanban-card ${drag?.id === c.id ? 'dragging' : ''}`}
-                  draggable
-                  onDragStart={() => setDrag(c)}
+                  draggable={writable}
+                  onDragStart={() => writable && setDrag(c)}
                   onDragEnd={() => setDrag(null)}
                   onClick={() => nav(`/uebernahme/${c.id}`)}>
                   <div style={{ fontWeight: 600 }}>{c.name}{c.is_own && ' ⭐'}</div>
