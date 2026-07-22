@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query, one } from '../lib/db.js';
 import { requireAuth, requireRole } from '../lib/security.js';
 import { notify, notifyStatus, recentNotifications } from '../lib/notify.js';
+import { runContractWatch, upcomingExpiries } from '../lib/contractWatch.js';
 
 const router = Router();
 // Alle Admin-Endpunkte erfordern Authentifizierung + Admin-Rolle.
@@ -71,6 +72,21 @@ router.patch('/users/:id/role', async (req, res, next) => {
       return res.status(400).json({ error: 'ungültige Rolle' });
     const u = await one('UPDATE users SET role=$2 WHERE id=$1 RETURNING id, email, role', [req.params.id, role]);
     res.json(u || { error: 'nicht gefunden' });
+  } catch (e) { next(e); }
+});
+
+// Vertragsauslauf-Wächter: Vorschau (ohne Benachrichtigung) …
+router.get('/contract-watch/preview', async (req, res, next) => {
+  try {
+    const withinDays = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365);
+    res.json({ within_days: withinDays, items: await upcomingExpiries(withinDays) });
+  } catch (e) { next(e); }
+});
+// … und Ausführung (benachrichtigt je neuen Auslauf einmal).
+router.post('/contract-watch', async (req, res, next) => {
+  try {
+    const withinDays = Math.min(Math.max(parseInt(req.body?.days, 10) || 30, 1), 365);
+    res.json(await runContractWatch({ withinDays }));
   } catch (e) { next(e); }
 });
 

@@ -26,6 +26,15 @@ export default function Admin() {
     load();
   }
 
+  async function runContractWatch() {
+    const r = await authApi.post('/admin/contract-watch', { days: 30 }).then((x) => x.json());
+    toast[r.alerted > 0 ? 'warning' : 'info'](
+      'Vertrags-Watch ausgeführt',
+      `${r.checked} auslaufende geprüft · ${r.alerted} neu gewarnt · ${r.skipped} bereits gemeldet.`,
+    );
+    load();
+  }
+
   useEffect(() => { track('admin.view'); load(); const t = setInterval(load, 8000); return () => clearInterval(t); }, [load]);
 
   async function setRole(id, role) { await authApi.patch(`/admin/users/${id}/role`, { role }); load(); }
@@ -99,6 +108,8 @@ export default function Admin() {
             <span style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
               <span className={`badge ${data.notif.status?.slack ? 'ok' : 'geplant'}`}>Slack {data.notif.status?.slack ? 'AN' : 'AUS'}</span>
               <span className={`badge ${data.notif.status?.teams ? 'ok' : 'geplant'}`}>Teams {data.notif.status?.teams ? 'AN' : 'AUS'}</span>
+              <button onClick={runContractWatch} title="Verträge prüfen, die in 30 Tagen auslaufen"
+                style={{ fontSize: '.75rem', padding: '.2rem .5rem' }}>⏰ Vertrags-Watch</button>
               <button onClick={testNotify} style={{ fontSize: '.75rem', padding: '.2rem .5rem' }}>Test senden</button>
             </span>
           </h3>

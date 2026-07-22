@@ -207,6 +207,21 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   `public` + uuid-ossp), **danach AGI-Insert erfolgreich** (ID automatisch erzeugt) –
   genau die Sequenz, die vorher fehlschlug.
 
+### 19. Proaktive Vertragsauslauf-Warnung – Umsatzsicherung (autonome Agenten-Entscheidung)
+- **Analyst-Chance**: auslaufende Verträge sind das größte planbare Umsatzrisiko.
+  Umgesetzt auf der vorhandenen Benachrichtigungs-Infrastruktur (`notify.js`).
+- **`lib/contractWatch.js`**: findet Verträge, die in ≤ N Tagen auslaufen (Standard 30),
+  und warnt **je Vertrag genau einmal** (In-App-Feed **+ Slack/Teams**). Schweregrad
+  eskaliert automatisch (**≤ 14 Tage → `error`/rot**, sonst `warning`/orange).
+  **Dedupliziert** pro Vertrag + Enddatum, damit wiederholte Läufe nicht spammen.
+- **Endpunkte** (Admin): `GET /api/admin/contract-watch/preview?days=` (Vorschau
+  ohne Benachrichtigung) und `POST /api/admin/contract-watch` (führt aus, meldet
+  `checked/alerted/skipped`).
+- **Täglicher Cron** `src/contract-watch-cron.js` (08:00, `npm run watch:contracts`,
+  Fenster via `CONTRACT_WATCH_DAYS`) + **Button „⏰ Vertrags-Watch"** im Admin-Dashboard.
+- Verifiziert: **26/26 API-Checks** (warnt bei Auslauf, dedupliziert im 2. Lauf);
+  Live-Demo erzeugt zwei Warnungen im Feed (9 Tage → error, 25 Tage → warning).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

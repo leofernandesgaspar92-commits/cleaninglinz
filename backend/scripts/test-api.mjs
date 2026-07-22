@@ -120,6 +120,21 @@ check('Übernahme-Workflow legt Schritte an',
   acq.status === 200 && Array.isArray(acq.body.steps) && acq.body.steps.length > 0,
   `schritte=${acq.body.steps?.length}`);
 
+// 6b) Vertragsauslauf-Wächter (Umsatzsicherung, Admin)
+const soon = new Date(Date.now() + 10 * 864e5).toISOString().slice(0, 10);
+const ctSoon = await post('/contracts', {
+  customer_id: customerId, title: 'Auslaufender Vertrag', status: 'aktiv',
+  frequency: 'monatlich', value_monthly: 1200, end_date: soon,
+});
+check('Bald auslaufenden Vertrag anlegen', ctSoon.status === 201 && !!ctSoon.body.id);
+if (ctSoon.body.id) cleanup.unshift(['/contracts/', ctSoon.body.id]);
+
+const watch1 = await post('/admin/contract-watch', { days: 30 });
+check('Vertrags-Watch warnt (>=1)', watch1.status === 200 && watch1.body.alerted >= 1, `alerted=${watch1.body.alerted}`);
+const watch2 = await post('/admin/contract-watch', { days: 30 });
+check('Vertrags-Watch dedupliziert (2. Lauf)', watch2.status === 200 && watch2.body.alerted === 0 && watch2.body.skipped >= 1,
+  `alerted=${watch2.body.alerted}, skipped=${watch2.body.skipped}`);
+
 // 7) Validierung / Fehlerpfade
 const badCreate = await post('/companies', { unbekanntes_feld: 'x' });
 check('POST ohne gültige Felder -> 400', badCreate.status === 400);
