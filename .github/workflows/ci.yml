@@ -7,7 +7,7 @@ on:
 
 jobs:
   backend:
-    name: Backend (Migration + Auth-Tests)
+    name: Backend (Migration + Auth- & API-Tests)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -41,6 +41,9 @@ jobs:
       - name: Auth end-to-end tests
         working-directory: backend
         run: node scripts/test-auth.mjs
+      - name: Business-API end-to-end tests
+        working-directory: backend
+        run: node scripts/test-api.mjs
       - name: OpenAPI & Metrics erreichbar
         run: |
           curl -sf http://localhost:4000/api/openapi.json > /dev/null

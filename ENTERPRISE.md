@@ -166,6 +166,18 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Die Entscheidung + Erkenntnis wurde in die **Knowledge Base** des AGI-Teams
   geschrieben (fließt in die nächste Verbesserungsrunde ein)
 
+### 16. Regressionsnetz für die Geschäftslogik (autonome Agenten-Entscheidung)
+- **Vom AGI-Team entschieden & umgesetzt**: Die QA-Perspektive priorisierte die
+  fehlende Testabdeckung (nur Auth war getestet, 17 Routen ohne Netz).
+- **`scripts/test-api.mjs`** (21 Checks, `npm run test:api`): End-to-End gegen den
+  laufenden Server – CRUD für **Unternehmen/Kunden/Verträge/Mitarbeiter**,
+  **Dashboard-Kennzahlen** (`/map`, `/finance`, `/expiring-contracts`), der
+  **Übernahme-Workflow** (legt Akquise + 6 Schritte an) sowie
+  **Validierung/Fehlerpfade** (400 bei leeren Feldern, 404 bei unbekannter ID).
+  Der Test **räumt seine Testdaten selbst wieder auf** (FK-Reihenfolge).
+- **In die CI verdrahtet** (`.github/workflows/ci.yml`): läuft bei jedem Push/PR
+  direkt nach den Auth-Tests. Verifiziert: **21/21 grün**.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

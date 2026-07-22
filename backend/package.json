@@ -10,7 +10,8 @@
     "migrate": "node src/lib/migrate.js",
     "backup": "bash scripts/backup.sh",
     "backup:cron": "node src/backup-cron.js",
-    "test:auth": "node scripts/test-auth.mjs"
+    "test:auth": "node scripts/test-auth.mjs",
+    "test:api": "node scripts/test-api.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0",
