@@ -31,6 +31,7 @@ export const openapiSpec = {
     { name: 'Analytics', description: 'Nutzungs-Tracking & Heatmap' },
     { name: 'SSO', description: 'Single Sign-On (Google/Azure)' },
     { name: 'Merger', description: 'Übernahmen (Merger & Acquisition)' },
+    { name: 'KI', description: 'KI-Vertragsanalyse' },
     { name: 'Stammdaten', description: 'Unternehmen, Kunden, Verträge, Mitarbeiter, Jobs' },
     { name: 'System', description: 'Health & Metrics' },
   ],
@@ -60,6 +61,9 @@ export const openapiSpec = {
     '/api/acquisitions/by-company/{companyId}': { get: { tags: ['Merger'], summary: 'Übernahme-Workflow + Due Diligence', parameters: [{ name: 'companyId', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Workflow' } } } },
     '/api/acquisitions/steps/{stepId}': { patch: { tags: ['Merger'], summary: 'Schritt aktualisieren', parameters: [{ name: 'stepId', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'OK' } } } },
     '/api/acquisitions/by-company/{companyId}/report': { get: { tags: ['Merger'], summary: 'Statusbericht', parameters: [{ name: 'companyId', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: { description: 'Bericht' } } } },
+
+    '/api/contract-ai/analyze': { post: { tags: ['KI'], summary: 'Vertragstext analysieren (KI)', requestBody: reqBody({ text: 'string' }), responses: { 200: { description: 'Extrahierte Felder' } } } },
+    '/api/contract-ai/create-contract': { post: { tags: ['KI'], summary: 'Vertrag aus Analyse anlegen', requestBody: reqBody({ customer_id: 'string' }), responses: { 201: { description: 'Vertrag' } } } },
 
     '/api/companies': crud('Stammdaten', 'Unternehmen'),
     '/api/companies/{id}': crudItem('Stammdaten', 'Unternehmen'),

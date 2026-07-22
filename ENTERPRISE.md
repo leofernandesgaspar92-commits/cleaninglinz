@@ -43,6 +43,16 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Zusätzliche Indizes für schnelle Abfragen bei großen Datenmengen
   (Jobs nach Kunde/Mitarbeiter, auslaufende Verträge)
 
+### 8. KI-Vertragsanalyse (Merger-Integration)
+- `POST /api/contract-ai/analyze` – extrahiert aus Vertragstext automatisch
+  Vertragspartner, Laufzeit, **Kündigungsfrist**, Auto-Verlängerung, Frequenz,
+  **Monatswert & Preis/m²** sowie besondere Klauseln
+- `POST /api/contract-ai/create-contract` – legt daraus direkt einen Vertrag beim Kunden an
+- **Live** (mit `ANTHROPIC_API_KEY`): Claude `claude-opus-4-8` mit Structured Output.
+  **Sim** (ohne Key): umlaut-tolerante Heuristik – läuft sofort, gegen Beispielvertrag verifiziert
+- Frontend: Panel **KI-Vertragsanalyse** in der Übernahme-Seite (Text einfügen →
+  Felder → „Als Vertrag übernehmen")
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics` (Request-Zähler, Latenz-Histogramm,
   RSS-Speicher, Uptime) – direkt von Prometheus/Grafana scrapebar
@@ -87,6 +97,5 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 - **Datev-/Buchhaltungs-API**, **Outlook/Exchange-Kalender**, **Slack/Teams**
 - **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)
 - **CD** (Deployment nach Staging/Prod – CI ist bereits vorhanden)
-- **Native Windows-Paketierung** (Electron/MSIX) bzw. PWA-Installierbarkeit
-- **KI-Vertragsanalyse** (Kündigungsfristen/Preise automatisch extrahieren) im Merger-Modul
+- **Native Windows-Paketierung** (Electron/MSIX) – PWA-Installierbarkeit ist bereits vorhanden
 ```

@@ -13,6 +13,7 @@ import auth from './routes/auth.js';
 import admin from './routes/admin.js';
 import analytics from './routes/analytics.js';
 import sso from './routes/sso.js';
+import contractAI from './routes/contract-ai.js';
 import swaggerUi from 'swagger-ui-express';
 import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
@@ -36,6 +37,7 @@ app.use('/api/auth', auth);
 app.use('/api/admin', admin);
 app.use('/api/analytics', analytics);
 app.use('/api/sso', sso);
+app.use('/api/contract-ai', contractAI);
 
 // Fachdomäne
 app.use('/api/companies', companies);

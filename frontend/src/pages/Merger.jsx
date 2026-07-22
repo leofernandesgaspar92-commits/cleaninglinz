@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, euro } from '../lib/api.js';
+import ContractAnalyzer from '../components/ContractAnalyzer.jsx';
 
 const DD_STATUS = ['offen', 'ok', 'risiko', 'n_a'];
 
@@ -105,6 +106,8 @@ export default function Merger() {
 
         <StepBody stepKey={current.step_key} data={data} onDD={setDD} nav={nav} />
       </div>
+
+      <ContractAnalyzer companyId={company.id} />
     </div>
   );
 }
