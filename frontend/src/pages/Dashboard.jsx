@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [map, setMap] = useState({ jobs: [], companies: [] });
   const [finance, setFinance] = useState(null);
   const [expiring, setExpiring] = useState([]);
+  const [mrr, setMrr] = useState(null);
   const [err, setErr] = useState(null);
   const [tilesOffline, setTilesOffline] = useState(false);
 
@@ -21,6 +22,7 @@ export default function Dashboard() {
     ])
       .then(([m, f, e]) => { setMap(m); setFinance(f); setExpiring(e); })
       .catch((e) => setErr(e.message));
+    api.get('/dashboard/mrr-trend?months=18').then(setMrr).catch(() => {});
   }, []);
 
   const t = finance?.totals;
@@ -44,6 +46,8 @@ export default function Dashboard() {
              sub={t?.revenue > 0 ? `${Math.round((t.ebitda / t.revenue) * 100)}% Marge` : ''} />
         <Kpi label="Aktive Aufträge heute" value={map.jobs.filter((j) => j.status !== 'erledigt').length} />
       </div>
+
+      {mrr && mrr.months.length > 0 && <MrrTrend data={mrr} />}
 
       <div className="row">
         {/* Karte */}
@@ -148,6 +152,49 @@ function Kpi({ label, value, sub }) {
       <div className="label">{label}</div>
       <div className="value">{value}</div>
       {sub && <div className="sub">{sub}</div>}
+    </div>
+  );
+}
+
+// MRR-Verlauf als schlichtes, abhängigkeitsfreies SVG-Balkendiagramm.
+function MrrTrend({ data }) {
+  const months = data.months;
+  const max = Math.max(1, ...months.map((m) => m.mrr));
+  const W = 900, H = 120, pad = 4;
+  const bw = (W - pad * 2) / months.length;
+  const yoy = data.yoy_growth_pct;
+  const up = yoy != null && yoy >= 0;
+  return (
+    <div style={{ marginBottom: '1.2rem' }}>
+      <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>📈 MRR-Entwicklung <span className="muted" style={{ fontSize: '.8rem' }}>· monatlich wiederkehrender Umsatz</span></span>
+        <span style={{ display: 'flex', gap: '.6rem', alignItems: 'baseline' }}>
+          <b style={{ fontSize: '1.1rem' }}>{euro(data.current_mrr)}</b>
+          {yoy != null && (
+            <span className={`badge ${up ? 'ok' : 'geplant'}`} title="Veränderung ggü. Vorjahr">
+              {up ? '▲' : '▼'} {Math.abs(yoy)}% YoY
+            </span>)}
+        </span>
+      </h3>
+      <div className="card" style={{ padding: '.8rem' }}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="120"
+             role="img" aria-label="MRR-Verlauf der letzten Monate">
+          {months.map((m, i) => {
+            const h = (m.mrr / max) * (H - 20);
+            const last = i === months.length - 1;
+            return (
+              <g key={m.month}>
+                <rect x={pad + i * bw + 1} y={H - h - 14} width={bw - 2} height={h}
+                      fill={last ? 'var(--accent)' : 'rgba(122,162,255,.45)'} rx="2">
+                  <title>{m.month}: {euro(m.mrr)}</title>
+                </rect>
+              </g>
+            );
+          })}
+          <text x={pad} y={H - 2} fontSize="11" fill="#8b97a7">{months[0].month}</text>
+          <text x={W - pad} y={H - 2} fontSize="11" fill="#8b97a7" textAnchor="end">{months.at(-1).month}</text>
+        </svg>
+      </div>
     </div>
   );
 }

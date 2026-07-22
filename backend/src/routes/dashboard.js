@@ -96,6 +96,34 @@ router.get('/workload', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// MRR-Entwicklung: monatlich wiederkehrender Umsatz über die Zeit, direkt aus den
+// Vertragslaufzeiten (start_date/end_date) berechnet – zeigt Wachstum & Auslaufen.
+router.get('/mrr-trend', async (req, res, next) => {
+  try {
+    const months = Math.min(Math.max(parseInt(req.query.months, 10) || 18, 3), 36);
+    const rows = await query(`
+      WITH m AS (
+        SELECT date_trunc('month', d)::date AS month_start
+        FROM generate_series(
+          date_trunc('month', CURRENT_DATE) - (($1::int - 1) * interval '1 month'),
+          date_trunc('month', CURRENT_DATE),
+          interval '1 month') d
+      )
+      SELECT to_char(m.month_start, 'YYYY-MM') AS month,
+             COALESCE(SUM(c.value_monthly) FILTER (
+               WHERE c.start_date <= (m.month_start + interval '1 month' - interval '1 day')
+                 AND (c.end_date IS NULL OR c.end_date >= m.month_start)
+             ), 0)::numeric AS mrr
+      FROM m LEFT JOIN contracts c ON TRUE
+      GROUP BY m.month_start ORDER BY m.month_start`, [months]);
+    const series = rows.map((r) => ({ month: r.month, mrr: Number(r.mrr) }));
+    const current = series.at(-1)?.mrr || 0;
+    const yearAgo = series.length >= 13 ? series.at(-13).mrr : (series[0]?.mrr || 0);
+    const growthPct = yearAgo > 0 ? Math.round(((current - yearAgo) / yearAgo) * 1000) / 10 : null;
+    res.json({ months: series, current_mrr: current, yoy_growth_pct: growthPct });
+  } catch (e) { next(e); }
+});
+
 // Übernahme-ROI / Synergie-Rechner: bewertet die Ziel-Firmen der Pipeline.
 // Wo kein Kaufpreis feststeht, wird er aus einem EBITDA-Multiple geschätzt.
 // Synergie = Anteil des Zielumsatzes, der nach Integration als EBITDA-Uplift

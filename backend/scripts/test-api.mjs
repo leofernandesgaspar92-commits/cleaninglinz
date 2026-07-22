@@ -139,6 +139,13 @@ check('Dashboard /workload (Team-Auslastung)',
   && dWork.body.totals && typeof dWork.body.totals.avg_open_per_employee === 'number',
   `aktive=${dWork.body.totals?.active_employees}, Ø offen=${dWork.body.totals?.avg_open_per_employee}, unbesetzt=${dWork.body.unassigned_open}`);
 
+const dMrr = await get('/dashboard/mrr-trend?months=18');
+check('Dashboard /mrr-trend (MRR-Verlauf)',
+  dMrr.status === 200 && Array.isArray(dMrr.body.months) && dMrr.body.months.length === 18
+  && dMrr.body.months.every((m) => typeof m.mrr === 'number' && /^\d{4}-\d{2}$/.test(m.month))
+  && typeof dMrr.body.current_mrr === 'number',
+  `current=${dMrr.body.current_mrr}, yoy=${dMrr.body.yoy_growth_pct}`);
+
 const dRoi = await get('/dashboard/merger-roi');
 const roiTop = dRoi.body?.targets?.[0];
 check('Dashboard /merger-roi (Übernahme-ROI)',

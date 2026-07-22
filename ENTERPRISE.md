@@ -282,6 +282,16 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **32/32 API-Checks** (Sortierung geprüft); Seed-Ranking:
   Stahl & Glanz **34,4 %** (Top, 2,9 J.), Urfahr 29,1 %, Donau Sauber 26,8 %.
 
+### 25. MRR-Entwicklung – Umsatz-Zeitreihe (autonome Agenten-Entscheidung)
+- **Analyst-Perspektive**: den monatlich wiederkehrenden Umsatz (MRR) über die Zeit
+  sichtbar machen. `GET /api/dashboard/mrr-trend?months=N` berechnet die MRR je
+  Monat **direkt aus den Vertragslaufzeiten** (`start_date`/`end_date`), plus
+  `current_mrr` und **YoY-Wachstum**.
+- **Frontend**: **abhängigkeitsfreies SVG-Balkendiagramm** auf dem Dashboard
+  (Theme-konform, letzter Monat hervorgehoben, YoY-Badge, Tooltips je Monat).
+- Verifiziert: **33/33 API-Checks**; Seed zeigt den Abfall **14.700 € → 9.800 €**
+  (−33,3 % YoY), weil Verträge auslaufen – untermauert die Umsatzsicherung (Nr. 19).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
