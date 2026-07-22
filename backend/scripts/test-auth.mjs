@@ -98,5 +98,14 @@ if (/^(1|true|yes|on)$/i.test(process.env.REQUIRE_ADMIN_MFA || '')) {
   check('MFA-Pflicht: Lesen bleibt erlaubt (Warnung sichtbar)', readOk.status === 200);
 }
 
+// 14) Audit-Log-CSV-Export (Compliance) – Admin-only
+const auditCsv = await fetch(B + '/admin/audit.csv', { headers: { Authorization: `Bearer ${token2}` } });
+const auditCsvText = await auditCsv.text();
+check('Audit-Log-CSV (Admin, text/csv, Kopfzeile)',
+  auditCsv.status === 200 && (auditCsv.headers.get('content-type') || '').includes('text/csv')
+  && auditCsvText.includes('Zeitpunkt;Akteur;Aktion'));
+const auditCsvNoAuth = await fetch(B + '/admin/audit.csv');
+check('Audit-Log-CSV ohne Token -> 401', auditCsvNoAuth.status === 401);
+
 console.log(`\n${ok} bestanden, ${fail} fehlgeschlagen.`);
 process.exit(fail ? 1 : 0);

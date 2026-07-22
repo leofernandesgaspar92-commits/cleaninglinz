@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query, one } from '../lib/db.js';
 import { wrap } from '../lib/cache.js';
+import { toCsv, sendCsv } from '../lib/csv.js';
 
 const router = Router();
 
@@ -148,21 +149,6 @@ async function computeMergerRoi() {
     };
   }).sort((a, b) => b.roi_with_synergy_pct - a.roi_with_synergy_pct);
   return { assumptions: { ask_multiple: ASK_MULTIPLE, synergy_rate: SYNERGY_RATE }, targets: rows };
-}
-
-// CSV-Helfer: Excel-tauglich (UTF-8-BOM, CRLF, Semikolon-getrennt für DE-Excel).
-function toCsv(headers, rows) {
-  const esc = (v) => {
-    const s = v == null ? '' : String(v);
-    return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const lines = [headers.join(';'), ...rows.map((r) => r.map(esc).join(';'))];
-  return '﻿' + lines.join('\r\n') + '\r\n';
-}
-function sendCsv(res, filename, csv) {
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(csv);
 }
 
 // MRR-Entwicklung: monatlich wiederkehrender Umsatz über die Zeit, direkt aus den

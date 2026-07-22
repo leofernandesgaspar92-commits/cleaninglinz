@@ -331,6 +331,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   → 200, und der **Browser-Download** wurde per Playwright real ausgelöst
   (`uebernahme-roi.csv`, Header + Zeilen).
 
+### 29. Audit-Log-CSV-Export für Compliance (autonome Agenten-Entscheidung)
+- **Compliance/DSGVO**: Der Audit-Trail war im Dashboard sichtbar, aber **nicht
+  exportierbar**. `GET /api/admin/audit.csv` (Admin-only, optional `?action=`/`?limit=`)
+  exportiert das Audit-Log (Zeitpunkt, Akteur, Aktion, Entität, ID, IP, Detail).
+- **Refactoring**: CSV-Helfer nach **`lib/csv.js`** ausgelagert und in `dashboard.js`
+  + `admin.js` wiederverwendet (DRY).
+- **Frontend**: Button „⬇ Audit-Log (CSV)" am Login-Protokoll (via `downloadAuthed`).
+- Verifiziert: **18/18 Auth-Checks** (CSV-Kopfzeile + `text/csv`, ohne Token → 401);
+  **36/36 API-Checks** nach dem Refactoring unverändert; CSV-Inhalt korrekt escaped
+  (JSON-Detail, BOM).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

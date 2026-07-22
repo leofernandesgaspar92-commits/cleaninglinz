@@ -3,6 +3,7 @@ import { query, one } from '../lib/db.js';
 import { requireAuth, requireRole } from '../lib/security.js';
 import { notify, notifyStatus, recentNotifications } from '../lib/notify.js';
 import { runContractWatch, upcomingExpiries } from '../lib/contractWatch.js';
+import { toCsv, sendCsv } from '../lib/csv.js';
 
 const router = Router();
 // Alle Admin-Endpunkte erfordern Authentifizierung + Admin-Rolle.
@@ -42,6 +43,24 @@ router.get('/audit', async (req, res, next) => {
       ? await query('SELECT * FROM audit_log WHERE action = $1 ORDER BY created_at DESC LIMIT $2', [action, limit])
       : await query('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT $1', [limit]);
     res.json(rows);
+  } catch (e) { next(e); }
+});
+
+// Audit-Log als CSV exportieren (Compliance / DSGVO-Nachweis). Admin-only.
+router.get('/audit.csv', async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 5000, 1), 100000);
+    const rows = req.query.action
+      ? await query('SELECT * FROM audit_log WHERE action = $1 ORDER BY created_at DESC LIMIT $2', [req.query.action, limit])
+      : await query('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT $1', [limit]);
+    const csv = toCsv(
+      ['Zeitpunkt', 'Akteur', 'Aktion', 'Entitaet', 'Entitaet_ID', 'IP', 'Detail'],
+      rows.map((r) => [
+        r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at,
+        r.actor_email, r.action, r.entity, r.entity_id, r.ip,
+        r.detail ? JSON.stringify(r.detail) : '',
+      ]));
+    sendCsv(res, 'audit-log.csv', csv);
   } catch (e) { next(e); }
 });
 

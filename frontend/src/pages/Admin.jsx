@@ -71,7 +71,12 @@ export default function Admin({ user }) {
 
       <div className="row" style={{ alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 380px' }}>
-          <h3>🔐 Login-Protokoll</h3>
+          <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>🔐 Login-Protokoll</span>
+            <button style={{ fontSize: '.75rem', padding: '.2rem .5rem' }}
+              title="Vollständiges Audit-Log als CSV (Compliance/DSGVO)"
+              onClick={() => downloadAuthed('/admin/audit.csv', 'audit-log.csv')}>⬇ Audit-Log (CSV)</button>
+          </h3>
           <div className="card" style={{ padding: '.2rem' }}>
             <table><thead><tr><th>Nutzer</th><th>Ereignis</th><th>IP</th><th>Zeit</th></tr></thead>
               <tbody>
