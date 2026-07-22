@@ -108,6 +108,23 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Frontend: Panel **KI-Vertragsanalyse** in der Übernahme-Seite (Text einfügen →
   Felder → „Als Vertrag übernehmen")
 
+### 13. Load-Balancing & Production-Deployment
+- **nginx als Reverse Proxy + Load Balancer** (`deploy/nginx.conf`): verteilt `/api`
+  per `least_conn` auf mehrere Backend-Instanzen (127.0.0.1:4000/4001/4002),
+  liefert das gebaute Frontend (`dist`) statisch aus (SPA-Fallback), proxyt
+  `/agi` (AGI-Team) und `/metrics`; gzip, Asset-Caching (1 Jahr, immutable),
+  Sicherheits-Header, nginx-seitiges Rate-Limit (`limit_req` api 20r/s, auth 1r/s
+  – Defense in Depth), `/healthz` + `/readyz` für den LB, HTTPS-Vorlage kommentiert
+- **Container-Image** (`backend/Dockerfile`): `node:20-alpine`, `npm ci --omit=dev`,
+  eigener HEALTHCHECK auf `/api/health`
+- **Ein-Kommando-Deployment** (`deploy/docker-compose.yml`): PostgreSQL + einmaliger
+  `migrate`-Service + skalierbare Backend-Replicas + Redis + nginx. Horizontal
+  skalieren mit `docker compose -f deploy/docker-compose.yml up -d --build --scale backend=3`;
+  `deploy/nginx-docker.conf` nutzt Dockers internes DNS (`server backend:4000`),
+  das die Last automatisch über alle Replicas verteilt
+- Verifiziert: nginx-Konfigurationen strukturell geprüft (Klammern balanciert,
+  Kern-Direktiven vorhanden), docker-compose als gültiges YAML geparst
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
@@ -152,10 +169,8 @@ Diese Punkte brauchen externe Dienste/Infrastruktur und sind sauber vorbereitet:
 
 - **Elasticsearch** als Skalierung der bereits vorhandenen Volltextsuche
   (für Millionen Dokumente; PostgreSQL-FTS ist implementiert)
-- **Load Balancing** (horizontale Skalierung; Caching ist bereits vorhanden,
-  Redis wird über `REDIS_URL` aktiviert)
 - **Live-Datev-API-Anbindung** (der DATEV-EXTF-Export ist vorhanden)
-- **Asynchrone Verarbeitung** (Job-Queue für PDF-Export etc.)
-- **CD** (Deployment nach Staging/Prod – CI ist bereits vorhanden)
+- **Live-CD-Pipeline** (automatischer Push nach Staging/Prod – das
+  Deployment-Setup mit nginx-Load-Balancing/Docker-Compose ist bereits vorhanden,
+  CI läuft)
 - **Native Windows-Paketierung** (Electron/MSIX) – PWA-Installierbarkeit ist bereits vorhanden
-```
