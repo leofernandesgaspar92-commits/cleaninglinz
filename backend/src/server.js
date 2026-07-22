@@ -34,7 +34,22 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 app.use(securityHeaders);
-app.use(cors());
+// CORS-Allowlist statt „alles erlauben" (Enterprise-Härtung). Same-Origin-Aufrufe
+// (Desktop-App, statisch ausgeliefertes Frontend) und Tools ohne Origin (curl,
+// Health-Checks) sind erlaubt; Cross-Origin nur für konfigurierte Herkünfte.
+const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4137', 'http://127.0.0.1:4137'];
+const CORS_ORIGINS = new Set([
+  ...DEV_ORIGINS,
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean) : []),
+]);
+app.use(cors({
+  origin(origin, cb) {
+    // Erlaubt → CORS-Header setzen; sonst ohne Header (Browser blockt cross-origin,
+    // Request läuft aber sauber durch – kein 500/Log-Rauschen).
+    cb(null, !origin || CORS_ORIGINS.has(origin));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '2mb' }));
 app.use(metricsMiddleware);
 // Genereller Rate-Limiter (großzügig); strenger für Auth (Brute-Force-Schutz).

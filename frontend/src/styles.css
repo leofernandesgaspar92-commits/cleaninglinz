@@ -102,7 +102,10 @@ tr:hover td { background: var(--bg-elev); }
 .step .n { font-size: .72rem; color: var(--text-dim); }
 .step .t { font-weight: 600; margin-top: .2rem; }
 
-.map { height: 460px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.map { position: relative; height: 460px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.map-offline-note { position: absolute; z-index: 500; top: .6rem; left: 50%; transform: translateX(-50%);
+  background: rgba(14,17,23,.85); color: var(--text); border: 1px solid var(--border);
+  padding: .35rem .7rem; border-radius: 999px; font-size: .8rem; pointer-events: none; }
 .row { display: flex; gap: 1rem; flex-wrap: wrap; }
 .progress { height: 8px; background: var(--bg-elev2); border-radius: 20px; overflow: hidden; }
 .progress > div { height: 100%; background: var(--accent-2); }

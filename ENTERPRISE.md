@@ -149,6 +149,23 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   valides JSON, `server.js` (mit Static-Serving) syntaxgeprüft, Icon als gültiges
   512×512-PNG erzeugt
 
+### 15. Selbstgenügsame, gehärtete Außengrenze (autonome Agenten-Entscheidung)
+- **Vom AGI-Team entschieden & umgesetzt**: Die Analyse (5 Perspektiven) priorisierte
+  die externe CDN-Abhängigkeit als wichtigste Schwachstelle. Umgesetzt:
+  - **Leaflet-CSS lokal gebündelt** (`import 'leaflet/dist/leaflet.css'`) statt vom
+    unpkg-CDN → **offline-tauglich** (wichtig für die Electron-Desktop-App),
+    **CSP-konform** und ohne Dritt-Request (DSGVO/Angriffsfläche). Verifiziert:
+    Build enthält keine CDN-Referenz mehr, Karte rendert offline korrekt
+  - **Graceful Offline-Fallback der Karte**: fallen die OSM-Kacheln aus, erscheint
+    ein dezenter Hinweis, während Marker & Standorte sichtbar bleiben (`tileerror`)
+  - **CORS-Allowlist** statt „alle Origins erlauben": Same-Origin (Desktop, statisch
+    ausgeliefertes Frontend) und Tools ohne Origin bleiben erlaubt, Dev-Ports
+    voreingestellt, weitere über `CORS_ORIGINS`. Fremde Origins erhalten keinen
+    ACAO-Header (Browser blockt, kein Log-Rauschen). Verifiziert: Dev erlaubt,
+    `evil.com` blockiert, Health/curl unverändert
+- Die Entscheidung + Erkenntnis wurde in die **Knowledge Base** des AGI-Teams
+  geschrieben (fließt in die nächste Verbesserungsrunde ein)
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

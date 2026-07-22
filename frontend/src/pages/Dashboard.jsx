@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [finance, setFinance] = useState(null);
   const [expiring, setExpiring] = useState([]);
   const [err, setErr] = useState(null);
+  const [tilesOffline, setTilesOffline] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -49,10 +50,19 @@ export default function Dashboard() {
         <div style={{ flex: '2 1 520px' }}>
           <h3>Karte Linz</h3>
           <div className="map">
+            {tilesOffline && (
+              <div className="map-offline-note">
+                🗺️ Kartenkacheln offline – Marker &amp; Standorte bleiben sichtbar.
+              </div>
+            )}
             <MapContainer center={LINZ} zoom={13} style={{ height: '100%' }}>
               <TileLayer
                 attribution='&copy; OpenStreetMap'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                eventHandlers={{
+                  tileerror: () => setTilesOffline(true),
+                  tileload: () => setTilesOffline(false),
+                }}
               />
               {map.jobs.map((j) => (
                 <CircleMarker key={j.id} center={[j.lat, j.lng]} radius={9}
