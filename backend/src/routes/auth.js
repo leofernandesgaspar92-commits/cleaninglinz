@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { query, one } from '../lib/db.js';
 import {
   hashPassword, verifyPassword, signToken,
-  generateTotpSecret, otpauthURL, verifyTotp,
+  generateTotpSecret, otpauthURL, verifyTotp, validatePassword,
 } from '../lib/auth.js';
 import { audit, requireAuth, requireRole } from '../lib/security.js';
 import { notify } from '../lib/notify.js';
@@ -23,6 +23,8 @@ router.post('/register', async (req, res, next) => {
   try {
     const { email, password, full_name, role = 'mitarbeiter' } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'E-Mail und Passwort nötig' });
+    const pwCheck = validatePassword(password, { email });
+    if (!pwCheck.ok) return res.status(400).json({ error: pwCheck.reason });
 
     // Bootstrap ist offen, solange noch kein Nutzer mit Passwort existiert
     // (Seed-Nutzer ohne Passwort blockieren die Erstanlage nicht).

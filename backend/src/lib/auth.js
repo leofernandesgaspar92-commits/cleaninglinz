@@ -9,6 +9,30 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-bitte-in-produktion-setzen';
 const JWT_TTL = process.env.JWT_TTL || '8h';
 
+// --- Passwort-Richtlinie ---------------------------------------------------
+// Mindeststärke serverseitig erzwungen (Enterprise-Härtung). Liefert
+// { ok, reason }. Bewusst pragmatisch: Länge + Buchstabe + Ziffer, keine
+// trivialen/zur E-Mail passenden Passwörter.
+const WEAK = new Set([
+  'passwort1234', 'password1234', 'passwort2024', 'password2024',
+  'qwertz123456', 'qwerty123456', 'administrator1', 'willkommen123',
+  'geheim123456', 'leco12345678', '1234567890ab',
+]);
+export function validatePassword(password, { email } = {}) {
+  if (typeof password !== 'string' || password.length < 10)
+    return { ok: false, reason: 'Passwort muss mindestens 10 Zeichen haben.' };
+  if (!/[A-Za-zÄÖÜäöüß]/.test(password) || !/\d/.test(password))
+    return { ok: false, reason: 'Passwort muss Buchstaben und Ziffern enthalten.' };
+  if (WEAK.has(password.toLowerCase()))
+    return { ok: false, reason: 'Passwort ist zu gebräuchlich – bitte ein stärkeres wählen.' };
+  // Name-Stamm der E-Mail (führende Buchstaben vor Ziffer/Trennzeichen) darf
+  // nicht im Passwort stecken – deckt auch eindeutige Adressen wie max_123@ ab.
+  const namePart = ((email || '').split('@')[0].toLowerCase().match(/^[a-zäöüß]+/) || [''])[0];
+  if (namePart.length >= 4 && password.toLowerCase().includes(namePart))
+    return { ok: false, reason: 'Passwort darf nicht den E-Mail-Namen enthalten.' };
+  return { ok: true };
+}
+
 // --- Passwörter (scrypt) ---------------------------------------------------
 export function hashPassword(password) {
   const salt = crypto.randomBytes(16);

@@ -36,7 +36,7 @@ check('Geschäfts-API ohne Login -> 401', guard.status === 401);
 
 // 0b) Anmelden (Bootstrap-Admin oder frischer Admin) und Token holen
 const email = `apitest_${Date.now()}@leco.at`;
-const pw = 'ApiTestPasswort123';
+const pw = 'Zugang2026Sicher'; // erfüllt die Passwort-Richtlinie, enthält nicht den E-Mail-Namen
 const reg = await post('/auth/register', { email, password: pw, role: 'admin' });
 if (reg.status === 201) {
   const login = await post('/auth/login', { email, password: pw });

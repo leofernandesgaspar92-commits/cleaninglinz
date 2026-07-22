@@ -79,6 +79,7 @@ export default function Login({ onAuth }) {
       )}
       <div className="muted" style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '.78rem' }}>
         Noch kein Konto? Der erste Nutzer wird per <code>POST /api/auth/register</code> als Admin angelegt.
+        <br />Passwort: mindestens 10 Zeichen, Buchstaben und Ziffern.
       </div>
     </div>
   );

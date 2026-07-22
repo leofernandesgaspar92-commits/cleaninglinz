@@ -247,6 +247,16 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: Frontend-Build grün; als „mitarbeiter" live geprüft – kein Import in
   der Navigation, kein „Neue Übernahme"-Button, Nur-Lese-Hinweis, Karten nicht ziehbar.
 
+### 22. Serverseitige Passwort-Richtlinie (autonome Agenten-Entscheidung)
+- **Security-Befund**: `/auth/register` akzeptierte beliebig schwache Passwörter.
+- **`validatePassword()`** (`lib/auth.js`): erzwingt **mind. 10 Zeichen**,
+  **Buchstaben + Ziffern**, keine **gebräuchlichen** Passwörter und keinen
+  **E-Mail-Namensstamm** im Passwort. In der Register-Route durchgesetzt
+  (`400` mit konkreter Begründung). Login-Seite nennt die Anforderungen.
+- Verifiziert: **16/16 Auth-Checks** inkl. 4 neuer Richtlinien-Fälle (zu kurz /
+  ohne Ziffer / zu gebräuchlich / enthält E-Mail-Name); **30/30 API-Checks**.
+  Beide Test-Suites lesen jetzt `API_BASE` (einheitlich konfigurierbar).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

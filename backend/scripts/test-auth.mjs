@@ -1,7 +1,7 @@
 // End-to-End-Test des Enterprise-Auth-Flows (gegen laufenden Server).
 import { totp } from '../src/lib/auth.js';
 
-const B = 'http://localhost:4000/api';
+const B = process.env.API_BASE || 'http://localhost:4000/api';
 const j = async (r) => ({ status: r.status, body: await r.json().catch(() => ({})) });
 const post = (p, body, token) => fetch(B + p, {
   method: 'POST',
@@ -69,6 +69,16 @@ check('Analytics Heatmap', heat.status === 200 && heat.body.byFeature.length >= 
 const sso = await get('/sso/status');
 check('SSO-Status erreichbar', sso.status === 200 && 'google' in sso.body,
   `google=${sso.body.google}, azure=${sso.body.azure}`);
+
+// 12) Passwort-Richtlinie: schwache Passwörter werden abgelehnt (400)
+const weakShort = await post('/auth/register', { email: `w1_${Date.now()}@leco.at`, password: 'kurz1' });
+check('Passwort-Richtlinie: zu kurz -> 400', weakShort.status === 400);
+const weakNoDigit = await post('/auth/register', { email: `w2_${Date.now()}@leco.at`, password: 'nuralphazeichen' });
+check('Passwort-Richtlinie: ohne Ziffer -> 400', weakNoDigit.status === 400);
+const weakCommon = await post('/auth/register', { email: `w3_${Date.now()}@leco.at`, password: 'passwort1234' });
+check('Passwort-Richtlinie: zu gebräuchlich -> 400', weakCommon.status === 400);
+const emailInPw = await post('/auth/register', { email: `maxmuster_${Date.now()}@leco.at`, password: 'maxmuster2026' });
+check('Passwort-Richtlinie: enthält E-Mail-Name -> 400', emailInPw.status === 400);
 
 console.log(`\n${ok} bestanden, ${fail} fehlgeschlagen.`);
 process.exit(fail ? 1 : 0);
