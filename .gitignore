@@ -4,3 +4,10 @@ dist/
 *.log
 .DS_Store
 frontend/.vite/
+# Von der Verbesserungsschleife generierte Laufzeit-Artefakte
+agents/IMPROVEMENTS.md
+agents/.applied-backups/
+# Backups & Dokumentenablage (Laufzeit)
+backups/
+documents/
+backend/exports/

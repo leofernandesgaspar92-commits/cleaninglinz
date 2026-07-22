@@ -1,0 +1,26 @@
+# Monitoring-Stack: Prometheus + Grafana für Leco.
+#   docker compose -f monitoring/docker-compose.yml up -d
+#   Grafana:    http://localhost:3000  (admin / admin)
+#   Prometheus: http://localhost:9090
+# Das Leco-Backend muss auf dem Host unter Port 4000 laufen.
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: leco-prometheus
+    ports: ['9090:9090']
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: leco-grafana
+    ports: ['3000:3000']
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [prometheus]

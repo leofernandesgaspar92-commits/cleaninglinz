@@ -1,0 +1,19 @@
+{
+  "name": "Leco – Reinigungs-Imperium Linz",
+  "short_name": "Leco",
+  "description": "Enterprise-Management für die Reinigungsbranche in Linz",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e1117",
+  "theme_color": "#0e1117",
+  "lang": "de",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Dashboard", "url": "/" },
+    { "name": "Übernahme starten", "url": "/uebernahme" },
+    { "name": "KI-Team", "url": "/ki-team" }
+  ]
+}

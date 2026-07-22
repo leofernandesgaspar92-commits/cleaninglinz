@@ -7,13 +7,21 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "migrate": "node src/lib/migrate.js"
+    "migrate": "node src/lib/migrate.js",
+    "backup": "bash scripts/backup.sh",
+    "backup:cron": "node src/backup-cron.js",
+    "test:auth": "node scripts/test-auth.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0",
     "cors": "^2.8.5",
     "csv-parse": "^5.5.6",
     "express": "^4.19.2",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
-    "pg": "^8.12.0"
+    "node-cron": "^3.0.3",
+    "pg": "^8.12.0",
+    "swagger-ui-express": "^5.0.1"
   }
 }

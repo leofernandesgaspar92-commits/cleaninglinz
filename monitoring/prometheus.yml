@@ -1,0 +1,14 @@
+# Prometheus-Scrape-Konfiguration für das Leco-Backend.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'leco-backend'
+    metrics_path: /metrics
+    static_configs:
+      # host.docker.internal erreicht das Backend auf dem Host (Port 4000).
+      - targets: ['host.docker.internal:4000']
+        labels:
+          service: leco
+          env: dev
