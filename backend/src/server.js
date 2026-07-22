@@ -22,17 +22,23 @@ import swaggerUi from 'swagger-ui-express';
 import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
 import { businessMetrics } from './lib/businessMetrics.js';
+import { securityHeaders, rateLimit, readiness } from './lib/hardening.js';
 import { openapiSpec } from './lib/openapi.js';
 import { startWorker } from './lib/queue.js';
 import './lib/jobHandlers.js'; // registriert die Job-Handler
 
 const app = express();
+app.disable('x-powered-by');
 app.set('trust proxy', true);
+app.use(securityHeaders);
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(metricsMiddleware);
+// Genereller Rate-Limiter (großzügig); strenger für Auth (Brute-Force-Schutz).
+app.use(rateLimit({ windowMs: 60000, max: 600, name: 'global' }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'leco-backend', version: '1.0-enterprise' }));
+app.get('/api/ready', readiness);
 
 // Monitoring & Dokumentation
 app.get('/metrics', async (req, res) => { res.type('text/plain').send(renderMetrics() + await businessMetrics()); });
@@ -40,7 +46,7 @@ app.get('/api/openapi.json', (req, res) => res.json(openapiSpec));
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { customSiteTitle: 'Leco API' }));
 
 // Sicherheit / Enterprise
-app.use('/api/auth', auth);
+app.use('/api/auth', rateLimit({ windowMs: 60000, max: 30, name: 'auth' }), auth);
 app.use('/api/admin', admin);
 app.use('/api/analytics', analytics);
 app.use('/api/sso', sso);

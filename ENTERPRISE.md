@@ -17,6 +17,16 @@ und die geplante Roadmap. Alles hier Genannte ist **implementiert und getestet**
 Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 `POST /api/auth/mfa/setup|enable|disable`.
 
+### 1b. Sicherheits-Härtung (ISO-27001-Richtung)
+- **HTTP-Sicherheits-Header** (`lib/hardening.js`): `X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS;
+  `X-Powered-By` entfernt
+- **Rate-Limiting** (Brute-Force-Schutz): 30 Anfragen/Min auf `/api/auth`,
+  600/Min generell; `429` + `Retry-After` bei Überschreitung
+- **Readiness-Probe** `GET /api/ready` (prüft DB) neben `GET /api/health`
+  (Liveness) – für Kubernetes/Load-Balancer
+- Verifiziert: Header gesetzt, Readiness `db:ok`, Rate-Limit greift (30 → 429)
+
 ### 2. Admin-Dashboard (Echtzeit-Monitoring)
 - `GET /api/admin/overview` – Nutzer, MFA-Quote, Logins/Fehl-Logins/Fehler/Events (24h)
 - `GET /api/admin/audit` – Audit-Log · `GET /api/admin/errors` – Fehler-Log

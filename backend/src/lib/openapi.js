@@ -37,7 +37,8 @@ export const openapiSpec = {
     { name: 'Kalender', description: 'iCalendar-Feeds (Outlook/Exchange)' },
   ],
   paths: {
-    '/api/health': { get: { tags: ['System'], summary: 'Health-Check', responses: { 200: { description: 'OK' } } } },
+    '/api/health': { get: { tags: ['System'], summary: 'Health-Check (Liveness)', responses: { 200: { description: 'OK' } } } },
+    '/api/ready': { get: { tags: ['System'], summary: 'Readiness-Probe (prüft DB)', responses: { 200: { description: 'bereit' }, 503: { description: 'nicht bereit' } } } },
     '/metrics': { get: { tags: ['System'], summary: 'Prometheus-Metriken', responses: { 200: { description: 'Exposition-Format' } } } },
     '/api/queue/{type}': { post: { tags: ['System'], summary: 'Hintergrund-Job einreihen', parameters: [{ name: 'type', in: 'path', required: true, schema: { type: 'string', enum: ['export_customers', 'reindex'] } }], responses: { 202: { description: 'Angenommen (läuft asynchron)' } } } },
     '/api/queue/job/{id}': { get: { tags: ['System'], summary: 'Job-Status pollen', parameters: [idParam], responses: { 200: { description: 'Job' } } } },
