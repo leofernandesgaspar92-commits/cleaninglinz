@@ -96,4 +96,43 @@ router.get('/workload', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Übernahme-ROI / Synergie-Rechner: bewertet die Ziel-Firmen der Pipeline.
+// Wo kein Kaufpreis feststeht, wird er aus einem EBITDA-Multiple geschätzt.
+// Synergie = Anteil des Zielumsatzes, der nach Integration als EBITDA-Uplift
+// wirkt (weniger Overhead). Beides über Umgebung konfigurierbar.
+router.get('/merger-roi', async (req, res, next) => {
+  try {
+    const ASK_MULTIPLE = Number(process.env.MERGER_ASK_MULTIPLE) || 4;   // Kaufpreis ≈ 4× EBITDA
+    const SYNERGY_RATE = Number(process.env.MERGER_SYNERGY_RATE) || 0.05; // 5% des Umsatzes
+    const targets = await query(`
+      SELECT id, name, status, annual_revenue, ebitda, purchase_price, employee_count
+      FROM companies
+      WHERE is_own = FALSE AND status <> 'verworfen'
+        AND ebitda IS NOT NULL AND ebitda > 0 AND annual_revenue IS NOT NULL`);
+    const round = (n, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
+    const rows = targets.map((t) => {
+      const ebitda = Number(t.ebitda);
+      const revenue = Number(t.annual_revenue);
+      const priceEstimated = t.purchase_price == null;
+      const price = priceEstimated ? ebitda * ASK_MULTIPLE : Number(t.purchase_price);
+      const synergyEbitda = revenue * SYNERGY_RATE;
+      return {
+        id: t.id, name: t.name, status: t.status,
+        annual_revenue: revenue, ebitda, employee_count: t.employee_count,
+        price, price_estimated: priceEstimated,
+        ebitda_multiple: round(price / ebitda, 1),
+        roi_pct: round((ebitda / price) * 100, 1),
+        payback_years: round(price / ebitda, 1),
+        synergy_ebitda: Math.round(synergyEbitda),
+        roi_with_synergy_pct: round(((ebitda + synergyEbitda) / price) * 100, 1),
+        payback_with_synergy_years: round(price / (ebitda + synergyEbitda), 1),
+      };
+    }).sort((a, b) => b.roi_with_synergy_pct - a.roi_with_synergy_pct);
+    res.json({
+      assumptions: { ask_multiple: ASK_MULTIPLE, synergy_rate: SYNERGY_RATE },
+      targets: rows,
+    });
+  } catch (e) { next(e); }
+});
+
 export default router;

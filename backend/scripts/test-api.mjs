@@ -139,6 +139,15 @@ check('Dashboard /workload (Team-Auslastung)',
   && dWork.body.totals && typeof dWork.body.totals.avg_open_per_employee === 'number',
   `aktive=${dWork.body.totals?.active_employees}, Ø offen=${dWork.body.totals?.avg_open_per_employee}, unbesetzt=${dWork.body.unassigned_open}`);
 
+const dRoi = await get('/dashboard/merger-roi');
+const roiTop = dRoi.body?.targets?.[0];
+check('Dashboard /merger-roi (Übernahme-ROI)',
+  dRoi.status === 200 && Array.isArray(dRoi.body.targets) && dRoi.body.targets.length >= 1
+  && roiTop && typeof roiTop.roi_with_synergy_pct === 'number' && roiTop.price > 0
+  // nach ROI inkl. Synergien absteigend sortiert
+  && dRoi.body.targets.every((t, i, a) => i === 0 || a[i - 1].roi_with_synergy_pct >= t.roi_with_synergy_pct),
+  `top=${roiTop?.name} (${roiTop?.roi_with_synergy_pct}% inkl. Synergie), ziele=${dRoi.body.targets?.length}`);
+
 // 6) Übernahme-Workflow: erzeugt Akquise + Schritte
 const acq = await get('/acquisitions/by-company/' + companyId);
 check('Übernahme-Workflow legt Schritte an',

@@ -7,6 +7,7 @@ const COLUMNS = ['ziel', 'due_diligence', 'verhandlung', 'vertrag', 'uebernommen
 
 export default function Companies() {
   const [companies, setCompanies] = useState([]);
+  const [roi, setRoi] = useState(null);
   const [drag, setDrag] = useState(null);
   const [err, setErr] = useState(null);
   const nav = useNavigate();
@@ -14,6 +15,7 @@ export default function Companies() {
 
   const load = () => api.get('/companies').then(setCompanies).catch((e) => setErr(e.message));
   useEffect(() => { load(); }, []);
+  useEffect(() => { api.get('/dashboard/merger-roi').then(setRoi).catch(() => {}); }, []);
 
   async function drop(status) {
     if (!drag || drag.status === status) return setDrag(null);
@@ -38,6 +40,45 @@ export default function Companies() {
       </div>
 
       {err && <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: '1rem' }}>{err}</div>}
+
+      {roi && roi.targets.length > 0 && (
+        <div style={{ marginBottom: '1.2rem' }}>
+          <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>💰 Übernahme-ROI &amp; Synergien</span>
+            <span className="muted" style={{ fontSize: '.75rem' }}>
+              Annahmen: Kaufpreis ≈ {roi.assumptions.ask_multiple}× EBITDA (falls offen) ·
+              Synergie {Math.round(roi.assumptions.synergy_rate * 100)}% vom Umsatz
+            </span>
+          </h3>
+          <div className="card" style={{ padding: '.2rem', overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Ziel</th><th>Status</th><th>EBITDA</th><th>Kaufpreis</th>
+                  <th>Multiple</th><th>ROI</th><th>ROI + Synergie</th><th>Amortisation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roi.targets.map((t, i) => (
+                  <tr key={t.id}>
+                    <td><b>{i === 0 && '🏆 '}{t.name}</b></td>
+                    <td><span className="badge">{STATUS_LABELS[t.status] || t.status}</span></td>
+                    <td>{euro(t.ebitda)}</td>
+                    <td>{euro(t.price)}{t.price_estimated && <span className="muted" title="geschätzt aus EBITDA-Multiple"> *</span>}</td>
+                    <td>{t.ebitda_multiple}×</td>
+                    <td>{t.roi_pct}%</td>
+                    <td><b style={{ color: 'var(--accent)' }}>{t.roi_with_synergy_pct}%</b></td>
+                    <td>{t.payback_with_synergy_years} J.</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="muted" style={{ fontSize: '.72rem', marginTop: '.3rem' }}>
+            * Kaufpreis geschätzt (kein Angebot hinterlegt). Sortiert nach ROI inkl. Synergien.
+          </div>
+        </div>
+      )}
 
       <div className="kanban">
         {COLUMNS.map((status) => {

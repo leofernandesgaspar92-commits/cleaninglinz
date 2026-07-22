@@ -269,6 +269,19 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **31/31 API-Checks** (neuer Workload-Check); Live-Demo mit 3 aktiven
   Mitarbeitern, davon 1 unterausgelastet.
 
+### 24. Übernahme-ROI- & Synergie-Rechner – Kern-Business (autonome Agenten-Entscheidung)
+- **Analyst-Perspektive, zurück zum Kern (M&A)**: Welche Ziel-Firma lohnt sich am
+  meisten? `GET /api/dashboard/merger-roi` bewertet jedes Nicht-eigene Ziel:
+  **EBITDA-Multiple, ROI, Amortisationsdauer**. Wo **kein Kaufpreis** hinterlegt
+  ist, wird er aus einem **EBITDA-Multiple geschätzt** (Standard 4×). **Synergie**
+  = Anteil des Zielumsatzes als EBITDA-Uplift nach Integration (Standard 5%);
+  Sortierung nach **ROI inkl. Synergien**. Konfigurierbar via
+  `MERGER_ASK_MULTIPLE` / `MERGER_SYNERGY_RATE`.
+- **Frontend**: Panel **„💰 Übernahme-ROI & Synergien"** auf der Unternehmen-Seite
+  (Ranking-Tabelle, Top-Ziel mit 🏆, geschätzte Preise mit „*", Annahmen sichtbar).
+- Verifiziert: **32/32 API-Checks** (Sortierung geprüft); Seed-Ranking:
+  Stahl & Glanz **34,4 %** (Top, 2,9 J.), Urfahr 29,1 %, Donau Sauber 26,8 %.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
