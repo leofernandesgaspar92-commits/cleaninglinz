@@ -9,6 +9,7 @@ import Import from './pages/Import.jsx';
 import AgiTeam from './pages/AgiTeam.jsx';
 import Login from './pages/Login.jsx';
 import Admin from './pages/Admin.jsx';
+import Security from './pages/Security.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
 import { Toasts, toast } from './components/Toast.jsx';
 import ProgressBar from './components/ProgressBar.jsx';
@@ -89,7 +90,10 @@ export default function App() {
               <div className="muted" style={{ fontSize: '.72rem' }}>
                 {user.role}{user.mfa_enabled ? ' · MFA ✅' : ''}
               </div>
-              <button onClick={logout} style={{ marginTop: '.4rem', width: '100%' }}>Abmelden</button>
+              <NavLink to="/sicherheit" style={{ display: 'block', fontSize: '.75rem', margin: '.35rem 0' }}>
+                🔐 {user.mfa_enabled ? 'Sicherheit' : 'MFA einrichten'}
+              </NavLink>
+              <button onClick={logout} style={{ width: '100%' }}>Abmelden</button>
             </div>
           ) : (
             <NavLink to="/login"><button className="primary" style={{ width: '100%' }}>Anmelden</button></NavLink>
@@ -109,6 +113,7 @@ export default function App() {
           <Route path="/ki-team" element={<AgiTeam />} />
           <Route path="/login" element={<Login onAuth={refresh} />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/sicherheit" element={<Security user={user} onChange={refresh} />} />
         </Routes>
       </main>
     </div>

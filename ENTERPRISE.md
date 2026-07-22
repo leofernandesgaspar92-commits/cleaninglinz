@@ -292,6 +292,16 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **33/33 API-Checks**; Seed zeigt den Abfall **14.700 € → 9.800 €**
   (−33,3 % YoY), weil Verträge auslaufen – untermauert die Umsatzsicherung (Nr. 19).
 
+### 26. MFA-Selbstverwaltung im Frontend (autonome Agenten-Entscheidung)
+- **Lücke**: Das RFC-6238-MFA-Backend war vollständig, aber nur **per curl** nutzbar.
+- **Seite `/sicherheit`** (`Security.jsx`): **Einrichten** (Base32-Schlüssel + `otpauth`-
+  Link zur manuellen Eingabe in Google/Microsoft Authenticator, 1Password …),
+  **Aktivieren** (6-stelliger Code) und **Deaktivieren**. Erreichbar über den
+  Sidebar-Link „🔐 MFA einrichten / Sicherheit"; Status-Badge (aktiv/inaktiv).
+- Verifiziert: kompletter **UI-Round-Trip** (Setup → Code → aktiv); danach Login
+  ohne Code = **206** (MFA verlangt), `me.mfa_enabled=true`. Damit ist das schon
+  vorhandene, gegen RFC-Testvektoren geprüfte TOTP-Backend endlich bedienbar.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
