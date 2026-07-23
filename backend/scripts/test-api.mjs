@@ -161,12 +161,14 @@ check('CSV-Export ohne Login -> 401', roiCsvNoAuth.status === 401);
 
 const dRoi = await get('/dashboard/merger-roi');
 const roiTop = dRoi.body?.targets?.[0];
-check('Dashboard /merger-roi (Übernahme-ROI)',
+check('Dashboard /merger-roi (Übernahme-Score)',
   dRoi.status === 200 && Array.isArray(dRoi.body.targets) && dRoi.body.targets.length >= 1
-  && roiTop && typeof roiTop.roi_with_synergy_pct === 'number' && roiTop.price > 0
-  // nach ROI inkl. Synergien absteigend sortiert
-  && dRoi.body.targets.every((t, i, a) => i === 0 || a[i - 1].roi_with_synergy_pct >= t.roi_with_synergy_pct),
-  `top=${roiTop?.name} (${roiTop?.roi_with_synergy_pct}% inkl. Synergie), ziele=${dRoi.body.targets?.length}`);
+  && roiTop && typeof roiTop.score === 'number' && roiTop.recommended === true && roiTop.price > 0
+  && roiTop.score_parts && typeof roiTop.score_parts.roi === 'number'
+  // nach Übernahme-Score absteigend sortiert, genau eine Empfehlung
+  && dRoi.body.targets.every((t, i, a) => i === 0 || a[i - 1].score >= t.score)
+  && dRoi.body.targets.filter((t) => t.recommended).length === 1,
+  `empfehlung=${roiTop?.name} (Score ${roiTop?.score}), ziele=${dRoi.body.targets?.length}`);
 
 // DD-Reife im ROI-Ranking: das Ziel mit DD-Prüfung (Donau Sauber, 7 Punkte inkl. 1 Risiko)
 const ddTarget = dRoi.body.targets.find((t) => t.dd_total > 0);

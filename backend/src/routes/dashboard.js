@@ -161,8 +161,27 @@ async function computeMergerRoi() {
       dd_ready_pct: decidable > 0 ? round((dd.ok / decidable) * 100, 0) : null,
       dd_risk: dd.risiko > 0, // rote Flagge: mindestens ein bekanntes Risiko
     };
-  }).sort((a, b) => b.roi_with_synergy_pct - a.roi_with_synergy_pct);
-  return { assumptions: { ask_multiple: ASK_MULTIPLE, synergy_rate: SYNERGY_RATE }, targets: rows };
+  });
+
+  // Übernahme-Readiness-Score: verbindet Rendite, Prüf-Reife und Pipeline-Nähe
+  // zu einer Empfehlung „welchen Deal zuerst?". Gewichte: ROI 50 %, DD 30 %,
+  // Pipeline-Stufe 20 %. DD ohne Prüfung zählt neutral (50), Risiken senken.
+  const STAGE_SCORE = { ziel: 20, due_diligence: 45, verhandlung: 70, vertrag: 90, uebernommen: 100, integriert: 100 };
+  const clamp = (n) => Math.max(0, Math.min(100, n));
+  for (const t of rows) {
+    const roiScore = clamp((t.roi_with_synergy_pct / 35) * 100);           // 35 % ≈ exzellent
+    const ddScore = t.dd_total === 0 ? 50 : clamp(t.dd_ready_pct - t.dd_risiko * 15);
+    const stageScore = STAGE_SCORE[t.status] ?? 20;
+    t.score = Math.round(0.5 * roiScore + 0.3 * ddScore + 0.2 * stageScore);
+    t.score_parts = { roi: Math.round(roiScore), dd: Math.round(ddScore), stage: stageScore };
+  }
+  rows.sort((a, b) => b.score - a.score || b.roi_with_synergy_pct - a.roi_with_synergy_pct);
+  if (rows[0]) rows[0].recommended = true;
+
+  return {
+    assumptions: { ask_multiple: ASK_MULTIPLE, synergy_rate: SYNERGY_RATE, weights: { roi: 0.5, dd: 0.3, stage: 0.2 } },
+    targets: rows,
+  };
 }
 
 // MRR-Entwicklung: monatlich wiederkehrender Umsatz über die Zeit, direkt aus den
@@ -192,11 +211,11 @@ router.get('/merger-roi.csv', async (req, res, next) => {
   try {
     const { targets } = await computeMergerRoi();
     sendCsv(res, 'uebernahme-roi.csv', toCsv(
-      ['Ziel', 'Status', 'Umsatz_EUR', 'EBITDA_EUR', 'Kaufpreis_EUR', 'Preis_geschaetzt',
+      ['Rang', 'Score', 'Empfehlung', 'Ziel', 'Status', 'Umsatz_EUR', 'EBITDA_EUR', 'Kaufpreis_EUR', 'Preis_geschaetzt',
         'EBITDA_Multiple', 'ROI_Prozent', 'Amortisation_Jahre', 'Synergie_EBITDA_EUR',
         'ROI_inkl_Synergie_Prozent', 'Amortisation_inkl_Synergie_Jahre',
         'DD_Punkte', 'DD_OK', 'DD_Risiken', 'DD_Offen', 'DD_Reife_Prozent'],
-      targets.map((t) => [t.name, t.status, t.annual_revenue, t.ebitda, t.price,
+      targets.map((t, i) => [i + 1, t.score, t.recommended ? 'ja' : '', t.name, t.status, t.annual_revenue, t.ebitda, t.price,
         t.price_estimated ? 'ja' : 'nein', t.ebitda_multiple, t.roi_pct, t.payback_years,
         t.synergy_ebitda, t.roi_with_synergy_pct, t.payback_with_synergy_years,
         t.dd_total, t.dd_ok, t.dd_risiko, t.dd_offen, t.dd_ready_pct])));

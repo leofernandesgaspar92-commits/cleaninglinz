@@ -353,6 +353,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   ungeprüft, Donau Sauber 26,8 % mit **43 % Reife und 1 bekanntem Risiko**.
 - Verifiziert: **37/37 API-Checks**; live Donau Sauber 3/7 ok, 1 Risiko, 3 offen.
 
+### 31. Übernahme-Readiness-Score – Capstone der M&A-Analytik (autonome Agenten-Entscheidung)
+- **Synthese** aus ROI (Nr. 24), DD-Reife (Nr. 30) und **Pipeline-Status** zu **einer
+  Empfehlung** „welchen Deal zuerst?". Score = `0.5·ROI + 0.3·DD + 0.2·Pipeline-Stufe`
+  (0–100). DD ohne Prüfung zählt neutral (50), jedes bekannte Risiko senkt (−15).
+- Ranking jetzt **nach Score**; genau **eine Empfehlung** markiert (`recommended`);
+  `score_parts` als Breakdown (Tooltip); CSV um **Rang/Score/Empfehlung** ergänzt.
+- **Ergebnis kippt sinnvoll**: die reine ROI-Spitze Stahl & Glanz (ROI-Teil 98, aber
+  Stufe „Ziel" = 20) fällt hinter **Urfahr Reinigung** (Score 71, „Verhandlung")
+  zurück; Donau Sauber 56 wegen DD-Risiko. Genau die „Rendite × Reife × Nähe"-Abwägung.
+- Verifiziert: **37/37 API-Checks** (Score-Sortierung + genau 1 Empfehlung).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

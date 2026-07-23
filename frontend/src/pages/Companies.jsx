@@ -58,19 +58,22 @@ export default function Companies() {
             <table>
               <thead>
                 <tr>
-                  <th>Ziel</th><th>Status</th><th>EBITDA</th><th>Kaufpreis</th>
-                  <th>Multiple</th><th>ROI + Synergie</th><th>Amortisation</th><th>DD-Reife</th>
+                  <th>Score</th><th>Ziel</th><th>Status</th><th>EBITDA</th><th>Kaufpreis</th>
+                  <th>ROI + Synergie</th><th>Amortisation</th><th>DD-Reife</th>
                 </tr>
               </thead>
               <tbody>
-                {roi.targets.map((t, i) => (
+                {roi.targets.map((t) => (
                   <tr key={t.id}>
-                    <td><b>{i === 0 && '🏆 '}{t.name}</b></td>
+                    <td title={`ROI ${t.score_parts.roi} · DD ${t.score_parts.dd} · Pipeline ${t.score_parts.stage} (Gewichte 50/30/20)`}>
+                      <b style={{ fontSize: '1.05rem', color: 'var(--accent)' }}>{t.score}</b>
+                      {t.recommended && <span className="badge ok" style={{ marginLeft: '.3rem' }}>🎯 Empfehlung</span>}
+                    </td>
+                    <td><b>{t.name}</b></td>
                     <td><span className="badge">{STATUS_LABELS[t.status] || t.status}</span></td>
                     <td>{euro(t.ebitda)}</td>
                     <td>{euro(t.price)}{t.price_estimated && <span className="muted" title="geschätzt aus EBITDA-Multiple"> *</span>}</td>
-                    <td>{t.ebitda_multiple}×</td>
-                    <td><b style={{ color: 'var(--accent)' }}>{t.roi_with_synergy_pct}%</b></td>
+                    <td>{t.roi_with_synergy_pct}%</td>
                     <td>{t.payback_with_synergy_years} J.</td>
                     <td>
                       {t.dd_total === 0 ? <span className="muted">–</span> : (
@@ -88,7 +91,8 @@ export default function Companies() {
             </table>
           </div>
           <div className="muted" style={{ fontSize: '.72rem', marginTop: '.3rem' }}>
-            * Kaufpreis geschätzt (kein Angebot hinterlegt). Sortiert nach ROI inkl. Synergien.
+            * Kaufpreis geschätzt (kein Angebot hinterlegt). Sortiert nach Übernahme-Score
+            (ROI 50 % · DD-Reife 30 % · Pipeline-Stufe 20 %).
           </div>
         </div>
       )}
