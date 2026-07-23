@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { makeCrudRouter } from '../lib/crud.js';
 import { one } from '../lib/db.js';
+import { writeRoles } from '../lib/security.js';
 
+// Job-Stammdaten (anlegen/ändern/löschen) folgen dem RBAC (manager/admin).
+// Check-in/-out (Feldarbeit) sind bewusst NICHT hier gegated – siehe unten.
 const router = makeCrudRouter({
   table: 'jobs',
   columns: [
@@ -9,6 +12,7 @@ const router = makeCrudRouter({
     'check_in_at', 'check_out_at', 'check_in_lat', 'check_in_lng', 'duration_min', 'notes',
   ],
   orderBy: 'scheduled_at NULLS LAST',
+  writeGuard: writeRoles,
 });
 
 // GPS-Check-in (mobile App)

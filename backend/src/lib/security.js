@@ -62,3 +62,11 @@ export function requireRole(minRole) {
     next();
   };
 }
+
+// Methodenbasiertes RBAC für Stammdaten: Lesen für jede angemeldete Rolle,
+// Schreiben (POST/PUT/PATCH) ab „manager", Löschen (DELETE) nur „admin".
+export function writeRoles(req, res, next) {
+  if (req.method === 'DELETE') return requireRole('admin')(req, res, next);
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) return requireRole('manager')(req, res, next);
+  return next();
+}

@@ -26,7 +26,7 @@ import { logError } from './lib/security.js';
 import { metricsMiddleware, renderMetrics } from './lib/metrics.js';
 import { businessMetrics } from './lib/businessMetrics.js';
 import { securityHeaders, rateLimit, readiness } from './lib/hardening.js';
-import { requireAuth, requireRole } from './lib/security.js';
+import { requireAuth, requireRole, writeRoles } from './lib/security.js';
 import { openapiSpec } from './lib/openapi.js';
 import { startWorker } from './lib/queue.js';
 import './lib/jobHandlers.js'; // registriert die Job-Handler
@@ -81,20 +81,15 @@ app.use('/api/queue', requireAuth, queueRouter);
 app.use('/api/search', requireAuth, search);
 app.use('/api/datev', requireAuth, datev);
 
-// RBAC nach HTTP-Methode: Lesen für jede angemeldete Rolle, Schreiben ab
-// „manager", Löschen nur „admin" (Least-Privilege für die Stammdaten).
-const writeRoles = (req, res, next) => {
-  if (req.method === 'DELETE') return requireRole('admin')(req, res, next);
-  if (['POST', 'PUT', 'PATCH'].includes(req.method)) return requireRole('manager')(req, res, next);
-  return next(); // GET/HEAD: nur Login nötig (requireAuth davor)
-};
-
 // Fachdomäne – geschützte Geschäftsdaten (Kunden-PII, Umsätze, Verträge).
+// writeRoles: Lesen für jede Rolle, Schreiben ab „manager", Löschen nur „admin".
 app.use('/api/companies', requireAuth, writeRoles, companies);
 app.use('/api/customers', requireAuth, writeRoles, customers);
 app.use('/api/contracts', requireAuth, writeRoles, contracts);
 app.use('/api/employees', requireAuth, writeRoles, employees);
-app.use('/api/jobs', requireAuth, writeRoles, jobs);
+// Jobs: Stammdaten-RBAC steckt im Router (writeGuard); Check-in/-out bleiben für
+// jede angemeldete Rolle offen (Reinigungskräfte = „mitarbeiter" im Feld).
+app.use('/api/jobs', requireAuth, jobs);
 app.use('/api/dashboard', requireAuth, dashboard); // nur Lesen
 app.use('/api/acquisitions', requireAuth, writeRoles, acquisitions);
 app.use('/api/import', requireAuth, requireRole('manager'), importRouter); // Stammdaten-Import

@@ -450,6 +450,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **43/43 API-Checks** (Dry-Run persistiert nicht, echter Lauf
   persistiert); UI zeigt den `building_type`-Constraint-Fehler exakt an.
 
+### 39. RBAC-Designfehler beim Feld-Check-in behoben
+- **Bug**: Das pauschale `writeRoles` am Jobs-Router verlangte „manager" für **jeden**
+  POST – damit konnten **Reinigungskräfte (mitarbeiter)** sich per Mobile-App **nicht
+  ein-/auschecken** (`POST /jobs/:id/checkin|checkout`), ihre Kernfunktion.
+- **Fix**: `writeRoles` nach `lib/security.js` ausgelagert; `makeCrudRouter` bekam die
+  Option **`writeGuard`** (nur auf POST/PATCH/DELETE); `jobs.js` schützt damit **nur
+  die Stammdaten-CRUD**, während **Check-in/-out für jede angemeldete Rolle offen**
+  bleiben (Mount nur `requireAuth`).
+- Verifiziert: **46/46 API-Checks** – „mitarbeiter" Check-in/Check-out `200`
+  (→ in_arbeit/erledigt), Job anlegen `403`; das Stammdaten-RBAC bleibt unverändert.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

@@ -81,6 +81,17 @@ check('RBAC: Mitarbeiter darf NICHT schreiben (403)', sWrite.status === 403);
 const sDel = await asStaff.del('/companies/' + companyId);
 check('RBAC: Mitarbeiter darf NICHT löschen (403)', sDel.status === 403);
 
+// 1c) Feldarbeit: „mitarbeiter" darf einchecken, aber keine Job-Stammdaten anlegen
+const someJob = ((await asStaff.get('/dashboard/jobs')).body || [])[0];
+const sJobCreate = await asStaff.post('/jobs', { customer_id: companyId, title: 'x' });
+check('RBAC: Mitarbeiter darf Jobs NICHT anlegen (403)', sJobCreate.status === 403);
+if (someJob) {
+  const sCheckin = await asStaff.post(`/jobs/${someJob.id}/checkin`, { lat: 48.3, lng: 14.28 });
+  check('Feld: Mitarbeiter darf einchecken (200)', sCheckin.status === 200 && sCheckin.body.status === 'in_arbeit');
+  const sCheckout = await asStaff.post(`/jobs/${someJob.id}/checkout`, {});
+  check('Feld: Mitarbeiter darf auschecken (200)', sCheckout.status === 200 && sCheckout.body.status === 'erledigt');
+}
+
 // 2) Kunde: CREATE (mit company_id) → contracts (leer)
 const cuCreate = await post('/customers', {
   company_id: companyId, name: `Bürohaus ${tag}`, building_type: 'buero',

@@ -3,8 +3,11 @@
 import { Router } from 'express';
 import { query, one } from './db.js';
 
-export function makeCrudRouter({ table, columns, orderBy = 'created_at DESC' }) {
+export function makeCrudRouter({ table, columns, orderBy = 'created_at DESC', writeGuard }) {
   const router = Router();
+  // Schreib-/Löschrouten optional per Middleware absichern (z.B. RBAC), wenn der
+  // Router nicht schon am Mount-Punkt geschützt ist.
+  const guard = writeGuard || ((req, res, next) => next());
 
   const pick = (body) => {
     const data = {};
@@ -32,7 +35,7 @@ export function makeCrudRouter({ table, columns, orderBy = 'created_at DESC' }) 
   });
 
   // CREATE
-  router.post('/', async (req, res, next) => {
+  router.post('/', guard, async (req, res, next) => {
     try {
       const data = pick(req.body);
       const keys = Object.keys(data);
@@ -48,7 +51,7 @@ export function makeCrudRouter({ table, columns, orderBy = 'created_at DESC' }) 
   });
 
   // UPDATE (partiell)
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', guard, async (req, res, next) => {
     try {
       const data = pick(req.body);
       const keys = Object.keys(data);
@@ -66,7 +69,7 @@ export function makeCrudRouter({ table, columns, orderBy = 'created_at DESC' }) 
   });
 
   // DELETE
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', guard, async (req, res, next) => {
     try {
       const row = await one(`DELETE FROM ${table} WHERE id = $1 RETURNING id`, [req.params.id]);
       if (!row) return res.status(404).json({ error: 'nicht gefunden' });
