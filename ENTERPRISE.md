@@ -375,6 +375,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   (seit dem Login-Gate → 401); auf `api.post` umgestellt (authentifiziert).
 - Verifiziert: **38/38 API-Checks**; Queue-Export mit Token → 202, ohne → 401.
 
+### 33. Auth-Konsistenz-Audit des Frontends (3. Login-Gate-Bug behoben)
+- Nach zwei 401-Bugs (DATEV, Queue-Export) **systematisch alle direkten API-Zugriffe**
+  im Frontend geprüft (`fetch`/`href`/`location`). **Genau ein weiterer echter Bug**:
+  die **Command-Palette-Volltextsuche** rief `/api/search` per `fetch` ohne Bearer-Token
+  (seit dem Login-Gate → 401) → auf `api.get` umgestellt.
+- Alle übrigen ungeschützten Zugriffe sind **korrekt public**: `calendar` `.ics`-Feeds
+  (Outlook), SSO-Login-Redirect, `analytics/track`, `sso/status` (vor dem Login).
+- Verifiziert: Suche ohne Token → 401, mit Token liefert „Donau Sauber" (Firma),
+  „Wohnanlage Donaupark" (Kunde), „Stiegenhausreinigung" (Vertrag); Command Palette
+  zeigt die Treffer live (Screenshot).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

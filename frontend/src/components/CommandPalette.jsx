@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api.js';
 
 // Befehle: Navigation + schnelle Aktionen. `extra` erlaubt kontextabhängige Aktionen.
 const NAV_COMMANDS = [
@@ -34,7 +35,7 @@ export default function CommandPalette({ actions = [] }) {
   useEffect(() => {
     if (!open || q.trim().length < 2) { setResults({ customers: [], companies: [], contracts: [] }); return; }
     const id = setTimeout(() => {
-      fetch(`/api/search?q=${encodeURIComponent(q)}`).then((r) => r.json())
+      api.get(`/search?q=${encodeURIComponent(q)}`) // authentifiziert (Bearer-Token)
         .then((j) => setResults({ customers: j.customers || [], companies: j.companies || [], contracts: j.contracts || [] }))
         .catch(() => {});
     }, 220);
