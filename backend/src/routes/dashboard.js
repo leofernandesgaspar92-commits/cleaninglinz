@@ -97,6 +97,35 @@ router.get('/workload', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Kunden-Umsatzkonzentration: Klumpenrisiko sichtbar machen (hängt der Umsatz an
+// einem Großkunden?). Basis: vertraglich vereinbarter Monatswert je Kunde (ohne
+// beendete Verträge) – datumsunabhängig, daher stabil.
+async function computeCustomerConcentration() {
+  const rows = await query(`
+    SELECT cu.id, cu.name, cu.district,
+           COALESCE(SUM(ct.value_monthly) FILTER (WHERE ct.status <> 'beendet'), 0)::numeric AS monthly_value,
+           COUNT(ct.id) FILTER (WHERE ct.status <> 'beendet')::int AS contracts
+    FROM customers cu LEFT JOIN contracts ct ON ct.customer_id = cu.id
+    GROUP BY cu.id, cu.name, cu.district
+    HAVING COALESCE(SUM(ct.value_monthly) FILTER (WHERE ct.status <> 'beendet'), 0) > 0
+    ORDER BY monthly_value DESC`);
+  const total = rows.reduce((s, r) => s + Number(r.monthly_value), 0);
+  const round = (n, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
+  const customers = rows.map((r) => ({
+    id: r.id, name: r.name, district: r.district,
+    monthly_value: Number(r.monthly_value), contracts: r.contracts,
+    share_pct: total > 0 ? round((Number(r.monthly_value) / total) * 100, 1) : 0,
+  }));
+  const topShare = customers[0]?.share_pct || 0;
+  // Herfindahl-Index (0–10000) als zusätzliches Konzentrationsmaß.
+  const hhi = Math.round(customers.reduce((s, c) => s + (c.share_pct / 100) ** 2, 0) * 10000);
+  const risk = topShare > 40 ? 'hoch' : topShare > 25 ? 'mittel' : 'niedrig';
+  return {
+    customers, total_monthly_value: total,
+    top_customer: customers[0]?.name || null, top_share_pct: topShare, hhi, risk,
+  };
+}
+
 // --- geteilte Berechnungen (JSON- und CSV-Endpunkte nutzen dieselbe Logik) ---
 async function computeMrrTrend(months) {
   const rows = await query(`
@@ -183,6 +212,19 @@ async function computeMergerRoi() {
     targets: rows,
   };
 }
+
+// Kunden-Umsatzkonzentration (Klumpenrisiko)
+router.get('/customer-concentration', async (req, res, next) => {
+  try { res.json(await computeCustomerConcentration()); } catch (e) { next(e); }
+});
+router.get('/customer-concentration.csv', async (req, res, next) => {
+  try {
+    const { customers } = await computeCustomerConcentration();
+    sendCsv(res, 'kundenkonzentration.csv', toCsv(
+      ['Kunde', 'Bezirk', 'Vertraege', 'Monatswert_EUR', 'Anteil_Prozent'],
+      customers.map((c) => [c.name, c.district, c.contracts, c.monthly_value, c.share_pct])));
+  } catch (e) { next(e); }
+});
 
 // MRR-Entwicklung: monatlich wiederkehrender Umsatz über die Zeit, direkt aus den
 // Vertragslaufzeiten (start_date/end_date) berechnet – zeigt Wachstum & Auslaufen.

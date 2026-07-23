@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { api, euro } from '../lib/api.js';
+import { api, euro, downloadAuthed } from '../lib/api.js';
 import { toast } from '../components/Toast.jsx';
 
 const TYPE_LABEL = {
@@ -14,15 +14,16 @@ export default function Customers() {
   const [q, setQ] = useState('');
   const [err, setErr] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [conc, setConc] = useState(null);
 
   useEffect(() => { api.get('/customers').then(setCustomers).catch((e) => setErr(e.message)); }, []);
+  useEffect(() => { api.get('/dashboard/customer-concentration').then(setConc).catch(() => {}); }, []);
 
   // Asynchroner Export als Hintergrund-Job (blockiert die UI nicht).
   async function exportBackground() {
     setExporting(true);
     try {
-      const res = await fetch('/api/queue/export_customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-      const job = await res.json();
+      const job = await api.post('/queue/export_customers', {}); // authentifiziert (Bearer-Token)
       toast.info('Export gestartet', 'Läuft im Hintergrund – du kannst weiterarbeiten.');
       for (let i = 0; i < 30; i++) {
         await new Promise((r) => setTimeout(r, 400));
@@ -64,6 +65,36 @@ export default function Customers() {
       </div>
 
       {err && <div className="card" style={{ borderColor: 'var(--danger)' }}>{err}</div>}
+
+      {conc && conc.customers.length > 0 && (
+        <div style={{ marginBottom: '1.2rem' }}>
+          <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>📊 Umsatzkonzentration <span className="muted" style={{ fontSize: '.8rem' }}>· Klumpenrisiko</span></span>
+            <span style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+              <span className={`badge ${conc.risk === 'hoch' ? 'geplant' : conc.risk === 'mittel' ? '' : 'ok'}`}
+                title={`Größter Kunde ${conc.top_share_pct}% · HHI ${conc.hhi}`}>
+                Risiko: {conc.risk} ({conc.top_share_pct}% Top-Kunde)
+              </span>
+              <button style={{ fontSize: '.75rem', padding: '.2rem .5rem' }}
+                onClick={() => downloadAuthed('/dashboard/customer-concentration.csv', 'kundenkonzentration.csv')}>⬇ CSV</button>
+            </span>
+          </h3>
+          <div className="card" style={{ padding: '.6rem .8rem' }}>
+            {conc.customers.slice(0, 6).map((c) => (
+              <div key={c.id} style={{ marginBottom: '.45rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.82rem' }}>
+                  <span>{c.name} <span className="muted">· {euro(c.monthly_value)}/Mon</span></span>
+                  <b>{c.share_pct}%</b>
+                </div>
+                <div style={{ height: 8, background: 'rgba(122,162,255,.15)', borderRadius: 4 }}>
+                  <div style={{ width: `${c.share_pct}%`, height: '100%', borderRadius: 4,
+                    background: c.share_pct > 40 ? 'var(--warning)' : 'var(--accent)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ padding: '.2rem' }}>
         <table>

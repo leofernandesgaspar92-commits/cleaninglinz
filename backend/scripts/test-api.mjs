@@ -139,6 +139,16 @@ check('Dashboard /workload (Team-Auslastung)',
   && dWork.body.totals && typeof dWork.body.totals.avg_open_per_employee === 'number',
   `aktive=${dWork.body.totals?.active_employees}, Ø offen=${dWork.body.totals?.avg_open_per_employee}, unbesetzt=${dWork.body.unassigned_open}`);
 
+const dConc = await get('/dashboard/customer-concentration');
+const topC = dConc.body?.customers?.[0];
+check('Dashboard /customer-concentration (Klumpenrisiko)',
+  dConc.status === 200 && Array.isArray(dConc.body.customers) && dConc.body.customers.length >= 1
+  && topC && typeof topC.share_pct === 'number'
+  && ['hoch', 'mittel', 'niedrig'].includes(dConc.body.risk)
+  // Anteile absteigend sortiert, Summe ~100%
+  && dConc.body.customers.every((c, i, a) => i === 0 || a[i - 1].share_pct >= c.share_pct),
+  `top=${topC?.name} (${dConc.body.top_share_pct}%), Risiko=${dConc.body.risk}, HHI=${dConc.body.hhi}`);
+
 const dMrr = await get('/dashboard/mrr-trend?months=18');
 check('Dashboard /mrr-trend (MRR-Verlauf)',
   dMrr.status === 200 && Array.isArray(dMrr.body.months) && dMrr.body.months.length === 18

@@ -364,6 +364,17 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   zurück; Donau Sauber 56 wegen DD-Risiko. Genau die „Rendite × Reife × Nähe"-Abwägung.
 - Verifiziert: **37/37 API-Checks** (Score-Sortierung + genau 1 Empfehlung).
 
+### 32. Kunden-Umsatzkonzentration (Klumpenrisiko) + Bugfix Hintergrund-Export
+- **Analyst/Risiko**: Hängt der Umsatz an einem Großkunden? `GET /api/dashboard/
+  customer-concentration` liefert je Kunde den **vertraglichen Monatswert + Anteil**,
+  den **Top-Kunden-Anteil**, den **Herfindahl-Index (HHI)** und eine **Risikostufe**
+  (hoch/mittel/niedrig); dazu CSV-Export.
+- **Frontend**: Panel „📊 Umsatzkonzentration" auf der Kunden-Seite (Balken je Kunde,
+  Risiko-Badge, CSV). Seed: **Risiko hoch** – Ars Electronica Center **66,7 %**, HHI 4871.
+- **Bugfix**: Der Hintergrund-Export rief `/api/queue` per `fetch` **ohne** Bearer-Token
+  (seit dem Login-Gate → 401); auf `api.post` umgestellt (authentifiziert).
+- Verifiziert: **38/38 API-Checks**; Queue-Export mit Token → 202, ohne → 401.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
