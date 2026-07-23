@@ -4,7 +4,7 @@ import { apiGet, flushQueue, queueSize } from '../api';
 
 const STATUS_COLOR = { geplant: '#d29922', unterwegs: '#2f81f7', in_arbeit: '#3fb950', erledigt: '#8b97a7' };
 
-export default function JobListScreen({ onOpen }) {
+export default function JobListScreen({ onOpen, onLogout }) {
   const [jobs, setJobs] = useState([]);
   const [pending, setPending] = useState(0);
   const [err, setErr] = useState(null);
@@ -13,7 +13,7 @@ export default function JobListScreen({ onOpen }) {
     try {
       await flushQueue();
       setPending(await queueSize());
-      setJobs(await apiGet('/jobs'));
+      setJobs(await apiGet('/dashboard/jobs')); // angereichert: Kundenname
       setErr(null);
     } catch (e) { setErr('Offline – zeige zuletzt geladene Aufträge.'); }
   }, []);
@@ -22,7 +22,10 @@ export default function JobListScreen({ onOpen }) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.h1}>Meine Aufträge</Text>
+      <View style={styles.head}>
+        <Text style={styles.h1}>Meine Aufträge</Text>
+        {onLogout && <TouchableOpacity onPress={onLogout}><Text style={styles.logout}>Abmelden</Text></TouchableOpacity>}
+      </View>
       {pending > 0 && <Text style={styles.pending}>⏳ {pending} Aktion(en) warten auf Sync</Text>}
       {err && <Text style={styles.err}>{err}</Text>}
       <FlatList
@@ -33,7 +36,7 @@ export default function JobListScreen({ onOpen }) {
           <TouchableOpacity style={styles.card} onPress={() => onOpen(item)}>
             <View style={[styles.dot, { backgroundColor: STATUS_COLOR[item.status] || '#888' }]} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{item.title || 'Reinigung'}</Text>
+              <Text style={styles.title}>{item.customer_name || item.title || 'Reinigung'}</Text>
               <Text style={styles.sub}>{item.status} · {item.scheduled_at ? new Date(item.scheduled_at).toLocaleString('de-AT') : 'ohne Termin'}</Text>
             </View>
           </TouchableOpacity>
@@ -46,7 +49,9 @@ export default function JobListScreen({ onOpen }) {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#0e1117', padding: 16, paddingTop: 56 },
-  h1: { color: '#e6edf3', fontSize: 24, fontWeight: '800', marginBottom: 8 },
+  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  h1: { color: '#e6edf3', fontSize: 24, fontWeight: '800' },
+  logout: { color: '#8b97a7', fontSize: 14 },
   pending: { color: '#d29922', marginBottom: 8 },
   err: { color: '#f85149', marginBottom: 8 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#161b22', borderRadius: 10, padding: 14, marginBottom: 10 },

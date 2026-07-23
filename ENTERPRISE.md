@@ -461,6 +461,18 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **46/46 API-Checks** – „mitarbeiter" Check-in/Check-out `200`
   (→ in_arbeit/erledigt), Job anlegen `403`; das Stammdaten-RBAC bleibt unverändert.
 
+### 40. Mobile-Feld-App an die Authentifizierung angebunden (war komplett kaputt)
+- **Bug**: Die React-Native-Feld-App sendete **keinen Token** → seit dem Login-Gate
+  lieferten **alle** Aufrufe `401`; die App war unbenutzbar.
+- **Fix**: **`authcore.js`** (reine, in Node testbare Auth-Helfer: `authHeaders`,
+  `parseLogin`); **`api.js`** mit Token-Cache + AsyncStorage, `login()`/`logout()`/
+  `initAuth()`, **Bearer-Header** in `apiGet`/`apiSend`/`flushQueue`, `401 → logout`;
+  neuer **`LoginScreen`** (inkl. MFA-Feld); **`App.js`** gatet hinter Login; die
+  Auftragsliste nutzt jetzt `/dashboard/jobs` (Kundenname).
+- Verifiziert: **authcore 7/7** (Node-Unit-Test); **voller Feld-Flow gegen das
+  Backend** – ohne Token `401`, mit Token: Aufträge laden, **Check-in 200/in_arbeit,
+  Check-out 200/erledigt**. Neuer **CI-Job „Mobile"** (Syntax + Auth-Core-Test).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

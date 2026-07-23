@@ -70,6 +70,18 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  mobile:
+    name: Mobile (Auth-Logik-Test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Syntax-Check (plain JS)
+        run: node --check mobile/src/authcore.js && node --check mobile/src/api.js
+      - name: Auth-Core testen
+        run: node mobile/scripts/test-mobile.mjs
+
   agents:
     name: AGI-Team (Syntax + Signal-Tests)
     runs-on: ubuntu-latest
