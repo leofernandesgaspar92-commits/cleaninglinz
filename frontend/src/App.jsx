@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Companies from './pages/Companies.jsx';
 import Customers from './pages/Customers.jsx';
 import Employees from './pages/Employees.jsx';
+import Jobs from './pages/Jobs.jsx';
 import Merger from './pages/Merger.jsx';
 import Import from './pages/Import.jsx';
 import AgiTeam from './pages/AgiTeam.jsx';
@@ -20,6 +21,7 @@ const NAV = [
   { to: '/unternehmen', label: 'Unternehmen', ico: '🏢' },
   { to: '/kunden', label: 'Kunden', ico: '📋' },
   { to: '/mitarbeiter', label: 'Mitarbeiter', ico: '👷' },
+  { to: '/einsaetze', label: 'Einsätze', ico: '🧹' },
   { to: '/uebernahme', label: 'Übernahme', ico: '⚡' },
   { to: '/import', label: 'Import', ico: '📥', minRole: 'manager' },
   { to: '/ki-team', label: 'KI-Team', ico: '🤖' },
@@ -107,6 +109,7 @@ export default function App() {
           <Route path="/unternehmen" element={<Companies />} />
           <Route path="/kunden" element={<Customers />} />
           <Route path="/mitarbeiter" element={<Employees />} />
+          <Route path="/einsaetze" element={<Jobs />} />
           <Route path="/uebernahme" element={<Merger />} />
           <Route path="/uebernahme/:companyId" element={<Merger />} />
           <Route path="/import" element={<Import />} />

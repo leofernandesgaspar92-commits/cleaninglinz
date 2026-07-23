@@ -139,6 +139,12 @@ check('Dashboard /workload (Team-Auslastung)',
   && dWork.body.totals && typeof dWork.body.totals.avg_open_per_employee === 'number',
   `aktive=${dWork.body.totals?.active_employees}, Ø offen=${dWork.body.totals?.avg_open_per_employee}, unbesetzt=${dWork.body.unassigned_open}`);
 
+const dJobs = await get('/dashboard/jobs');
+check('Dashboard /jobs (Einsatzplanung, angereichert)',
+  dJobs.status === 200 && Array.isArray(dJobs.body) && dJobs.body.length >= 1
+  && dJobs.body.every((j) => 'customer_name' in j && 'status' in j && 'employee_name' in j),
+  `einsaetze=${dJobs.body.length}`);
+
 const dConc = await get('/dashboard/customer-concentration');
 const topC = dConc.body?.customers?.[0];
 check('Dashboard /customer-concentration (Klumpenrisiko)',

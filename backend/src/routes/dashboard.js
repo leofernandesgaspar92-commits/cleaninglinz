@@ -213,6 +213,22 @@ async function computeMergerRoi() {
   };
 }
 
+// Einsatzplanung: alle Jobs mit Kunden- und Mitarbeiternamen (für die Board-Ansicht).
+router.get('/jobs', async (req, res, next) => {
+  try {
+    const rows = await query(`
+      SELECT j.id, j.title, j.status, j.scheduled_at, j.employee_id,
+             c.name AS customer_name, c.district,
+             e.first_name || ' ' || e.last_name AS employee_name
+      FROM jobs j
+      JOIN customers c ON c.id = j.customer_id
+      LEFT JOIN employees e ON e.id = j.employee_id
+      WHERE j.status <> 'abgebrochen'
+      ORDER BY j.scheduled_at NULLS LAST, c.name`);
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
 // Kunden-Umsatzkonzentration (Klumpenrisiko)
 router.get('/customer-concentration', async (req, res, next) => {
   try { res.json(await computeCustomerConcentration()); } catch (e) { next(e); }

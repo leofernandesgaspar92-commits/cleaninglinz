@@ -386,6 +386,18 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   „Wohnanlage Donaupark" (Kunde), „Stiegenhausreinigung" (Vertrag); Command Palette
   zeigt die Treffer live (Screenshot).
 
+### 34. Einsatzplanung – operative Job-Verwaltung (autonome Agenten-Entscheidung)
+- **Größte operative Lücke**: Jobs existierten in den Daten (Karte, Team-Auslastung),
+  aber es fehlte eine Seite zum **Zuweisen/Steuern**.
+- **`GET /api/dashboard/jobs`**: angereicherte Job-Liste (Kunden- + Mitarbeitername,
+  Termin, Status).
+- **Neue Seite `/einsaetze`**: Tabelle Termin/Kunde/Auftrag mit **Mitarbeiter-** und
+  **Status-Dropdown** (speichert per `PATCH /jobs/:id`), „unbesetzt"-Zähler.
+  **RBAC**: Zuweisung/Statusänderung ab „manager", sonst Nur-Lese-Ansicht.
+  Nav-Eintrag „🧹 Einsätze".
+- Verifiziert: **39/39 API-Checks**; Umbuchung persistiert end-to-end
+  (Elena Popescu → Marko Novak, Status „unterwegs").
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
