@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
-import { query, one } from '../lib/db.js';
+import { pool } from '../lib/db.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -45,15 +45,16 @@ const MAPPINGS = {
 // Duplikaterkennung Kunden: gleiche Adresse UND ähnlicher Name => Duplikat.
 // Beide Kriterien, damit unterschiedliche Kunden in derselben Straße nicht
 // fälschlich zusammengeführt werden.
-async function findDuplicateCustomer(address, name) {
+async function findDuplicateCustomer(client, address, name) {
   if (!address || !name) return null;
-  return one(
+  const { rows } = await client.query(
     `SELECT id, name FROM customers
      WHERE similarity(lower(address), lower($1)) > 0.6
        AND similarity(lower(name), lower($2)) > 0.5
      ORDER BY similarity(lower(address), lower($1)) DESC LIMIT 1`,
     [address, name]
   );
+  return rows[0] || null;
 }
 
 router.post('/:entity', upload.single('file'), async (req, res, next) => {
@@ -75,51 +76,67 @@ router.post('/:entity', upload.single('file'), async (req, res, next) => {
       relax_column_count: true,
     });
 
-    const result = { inserted: 0, duplicates: 0, skipped: 0, errors: [] };
+    // Dry-Run (Vorschau/Prüfung): validiert inkl. DB-Constraints, schreibt aber
+    // nichts – die gesamte Transaktion wird am Ende zurückgerollt.
+    const dryRun = ['1', 'true', 'yes'].includes(String(req.query.dryRun ?? req.body?.dryRun ?? '').toLowerCase());
 
-    for (const [i, rec] of records.entries()) {
-      const data = {};
-      for (const [csvCol, val] of Object.entries(rec)) {
-        const dbCol = cfg.fields[csvCol];
-        if (dbCol && val !== '') data[dbCol] = val;
-      }
-      // Typkonvertierung
-      for (const col of cfg.numeric || []) {
-        if (data[col] !== undefined) data[col] = Number(String(data[col]).replace(',', '.'));
-      }
-      for (const col of cfg.jsonArray || []) {
-        if (data[col] !== undefined) {
-          data[col] = JSON.stringify(String(data[col]).split(/[;|]/).map((s) => s.trim()).filter(Boolean));
+    const result = { dryRun, inserted: 0, duplicates: 0, skipped: 0, errors: [], preview: [] };
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const [i, rec] of records.entries()) {
+        const data = {};
+        for (const [csvCol, val] of Object.entries(rec)) {
+          const dbCol = cfg.fields[csvCol];
+          if (dbCol && val !== '') data[dbCol] = val;
+        }
+        // Typkonvertierung
+        for (const col of cfg.numeric || []) {
+          if (data[col] !== undefined) data[col] = Number(String(data[col]).replace(',', '.'));
+        }
+        for (const col of cfg.jsonArray || []) {
+          if (data[col] !== undefined) {
+            data[col] = JSON.stringify(String(data[col]).split(/[;|]/).map((s) => s.trim()).filter(Boolean));
+          }
+        }
+        if (companyId) {
+          data.company_id = companyId;
+          data.source_company_id = companyId;
+        }
+
+        // Mindestanforderung
+        const hasName = data.name || data.last_name;
+        if (!hasName) { result.skipped++; result.errors.push(`Zeile ${i + 2}: kein Name`); continue; }
+
+        // Duplikaterkennung (nur Kunden) – sieht auch Datensätze aus diesem Lauf.
+        if (entity === 'customers') {
+          const dup = await findDuplicateCustomer(client, data.address, data.name);
+          if (dup) { result.duplicates++; continue; }
+        }
+
+        // Savepoint je Zeile: eine fehlerhafte Zeile rollt nur sich selbst zurück,
+        // nicht die bereits gültigen Zeilen dieses Laufs.
+        await client.query('SAVEPOINT row');
+        try {
+          const keys = Object.keys(data);
+          const vals = keys.map((k) => data[k]);
+          const placeholders = keys.map((_, idx) => `$${idx + 1}`);
+          await client.query(
+            `INSERT INTO ${cfg.table} (${keys.join(',')}) VALUES (${placeholders.join(',')})`,
+            vals
+          );
+          await client.query('RELEASE SAVEPOINT row');
+          result.inserted++;
+          if (result.preview.length < 5) result.preview.push(data);
+        } catch (e) {
+          await client.query('ROLLBACK TO SAVEPOINT row');
+          result.skipped++;
+          result.errors.push(`Zeile ${i + 2}: ${e.message}`);
         }
       }
-      if (companyId) {
-        data.company_id = companyId;
-        data.source_company_id = companyId;
-      }
-
-      // Mindestanforderung
-      const hasName = data.name || data.last_name;
-      if (!hasName) { result.skipped++; result.errors.push(`Zeile ${i + 2}: kein Name`); continue; }
-
-      // Duplikaterkennung (nur Kunden)
-      if (entity === 'customers') {
-        const dup = await findDuplicateCustomer(data.address, data.name);
-        if (dup) { result.duplicates++; continue; }
-      }
-
-      try {
-        const keys = Object.keys(data);
-        const vals = keys.map((k) => data[k]);
-        const placeholders = keys.map((_, idx) => `$${idx + 1}`);
-        await query(
-          `INSERT INTO ${cfg.table} (${keys.join(',')}) VALUES (${placeholders.join(',')})`,
-          vals
-        );
-        result.inserted++;
-      } catch (e) {
-        result.skipped++;
-        result.errors.push(`Zeile ${i + 2}: ${e.message}`);
-      }
+      await client.query(dryRun ? 'ROLLBACK' : 'COMMIT');
+    } finally {
+      client.release();
     }
 
     res.json(result);

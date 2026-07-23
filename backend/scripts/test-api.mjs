@@ -213,6 +213,26 @@ const watch2 = await post('/admin/contract-watch', { days: 30 });
 check('Vertrags-Watch dedupliziert (2. Lauf)', watch2.status === 200 && watch2.body.alerted === 0 && watch2.body.skipped >= 1,
   `alerted=${watch2.body.alerted}, skipped=${watch2.body.skipped}`);
 
+// 6c) CSV-Import: Dry-Run prüft ohne zu speichern, echter Lauf persistiert
+const importName = `Importkunde ${tag}`;
+const csv = `name,typ,adresse,stadt\n${importName},buero,Teststrasse 1,Linz\nKaputt ${tag},ungueltigertyp,Teststrasse 2,Linz\n`;
+const importReq = (dry) => {
+  const fd = new FormData();
+  fd.append('file', new Blob([csv], { type: 'text/csv' }), 'test.csv');
+  return fetch(`${B}/import/customers${dry ? '?dryRun=1' : ''}`, { method: 'POST', headers: authHeaders(), body: fd }).then(j);
+};
+const findImported = async () => ((await get('/customers')).body || []).find((c) => c.name === importName);
+const dry = await importReq(true);
+check('Import Dry-Run: 1 gültig, 1 fehlerhaft, nichts gespeichert',
+  dry.status === 200 && dry.body.dryRun === true && dry.body.inserted === 1 && dry.body.skipped === 1,
+  `inserted=${dry.body.inserted}, skipped=${dry.body.skipped}`);
+check('Import Dry-Run persistiert nicht', !(await findImported()));
+const real = await importReq(false);
+check('Import echt: 1 gültig übernommen', real.status === 200 && real.body.dryRun === false && real.body.inserted === 1);
+const importedRow = await findImported();
+check('Import echt persistiert', !!importedRow);
+if (importedRow) cleanup.push(['/customers/', importedRow.id]);
+
 // 7) Validierung / Fehlerpfade
 const badCreate = await post('/companies', { unbekanntes_feld: 'x' });
 check('POST ohne gültige Felder -> 400', badCreate.status === 400);

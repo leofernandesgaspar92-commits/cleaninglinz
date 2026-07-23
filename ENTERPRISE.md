@@ -438,6 +438,18 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   einen **PostgreSQL-Service**, migriert **Leco (Schema+Seed) + AGI-Schema** und
   führt den Signal-Test aus – bei jedem Push/PR.
 
+### 38. CSV-Import mit Dry-Run/Vorschau (Datenqualität)
+- **Bisher** schrieb der Import sofort, ohne Prüfmöglichkeit. Neu läuft der gesamte
+  Import in **einer Transaktion mit Savepoint je Zeile** (eine fehlerhafte Zeile
+  rollt nur sich selbst zurück, gültige bleiben erhalten).
+- **`?dryRun=1`** validiert **inkl. echter DB-Constraints** und rollt am Ende
+  zurück (**nichts gespeichert**); liefert `inserted/duplicates/skipped`, die
+  Fehlerliste und **Preview-Zeilen** (Feld-Zuordnung).
+- **Frontend**: Button „🔍 Prüfen (Vorschau)" zeigt das Ergebnis + eine
+  Zuordnungstabelle und die exakten Constraint-Fehler; danach „📥 Jetzt N importieren".
+- Verifiziert: **43/43 API-Checks** (Dry-Run persistiert nicht, echter Lauf
+  persistiert); UI zeigt den `building_type`-Constraint-Fehler exakt an.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
