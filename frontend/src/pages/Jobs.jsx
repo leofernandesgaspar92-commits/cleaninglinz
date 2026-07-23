@@ -47,7 +47,7 @@ export default function Jobs() {
           <h1>Einsatzplanung</h1>
           <div className="muted">
             {open.length} offen · {done.length} erledigt
-            {unassigned > 0 && <> · <b style={{ color: 'var(--warning)' }}>{unassigned} unbesetzt</b></>}
+            {unassigned > 0 && <> · <b style={{ color: 'var(--warn)' }}>{unassigned} unbesetzt</b></>}
             {!writable && ' · Nur-Lese-Ansicht (Zuweisung ab Rolle „Manager")'}
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function Jobs() {
                 <td>
                   {writable ? (
                     <select value={j.employee_id || ''} onChange={(e) => patch(j.id, { employee_id: e.target.value || null }, 'Zuweisung gespeichert')}
-                      style={{ maxWidth: 180, borderColor: j.employee_id ? undefined : 'var(--warning)' }}>
+                      style={{ maxWidth: 180, borderColor: j.employee_id ? undefined : 'var(--warn)' }}>
                       <option value="">— unbesetzt —</option>
                       {employees.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
                     </select>

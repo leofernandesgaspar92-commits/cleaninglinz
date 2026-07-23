@@ -53,7 +53,7 @@ export default function Admin({ user }) {
       </div>
 
       {user && user.role === 'admin' && !user.mfa_enabled && (
-        <div className="card" style={{ borderColor: 'var(--warning)', marginBottom: '1.2rem',
+        <div className="card" style={{ borderColor: 'var(--warn)', marginBottom: '1.2rem',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
           <span>⚠ <b>MFA für dein Admin-Konto nicht aktiv.</b> Für privilegierte Konten dringend
             empfohlen; je nach Richtlinie sind Admin-Aktionen sonst gesperrt.</span>

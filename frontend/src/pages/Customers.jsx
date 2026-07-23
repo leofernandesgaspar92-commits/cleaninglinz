@@ -88,7 +88,7 @@ export default function Customers() {
                 </div>
                 <div style={{ height: 8, background: 'rgba(122,162,255,.15)', borderRadius: 4 }}>
                   <div style={{ width: `${c.share_pct}%`, height: '100%', borderRadius: 4,
-                    background: c.share_pct > 40 ? 'var(--warning)' : 'var(--accent)' }} />
+                    background: c.share_pct > 40 ? 'var(--warn)' : 'var(--accent)' }} />
                 </div>
               </div>
             ))}

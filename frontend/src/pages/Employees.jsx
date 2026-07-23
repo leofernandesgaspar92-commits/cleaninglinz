@@ -48,7 +48,7 @@ export default function Employees() {
           <div className="cards">
             {workload.employees.map((e) => (
               <div key={e.id} className="card"
-                style={{ borderColor: e.underutilized ? 'var(--warning)' : undefined }}>
+                style={{ borderColor: e.underutilized ? 'var(--warn)' : undefined }}>
                 <div style={{ fontWeight: 600 }}>{e.first_name} {e.last_name}</div>
                 <div className="muted" style={{ fontSize: '.75rem', marginBottom: '.4rem' }}>{e.role}</div>
                 <div style={{ display: 'flex', gap: '1rem' }}>

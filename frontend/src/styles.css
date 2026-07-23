@@ -155,3 +155,17 @@ kbd { font-family: inherit; font-size: .72rem; background: var(--bg-elev2); bord
 @keyframes toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 .kbd-hint { font-size: .72rem; color: var(--text-dim); margin-top: .8rem; }
+
+/* Geschäftsbericht + Druck */
+.print-only { display: none; }
+.report-sheet { background: var(--bg-elev, #161b22); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; }
+.report-title h1 { margin: 0 0 .2rem; }
+@media print {
+  .sidebar, .no-print, .topbar, .toast-wrap { display: none !important; }
+  .main { margin: 0 !important; padding: 0 !important; }
+  .print-only { display: block; }
+  body, .app, .main { background: #fff !important; color: #000 !important; }
+  .report-sheet, .card { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: none !important; }
+  .muted { color: #444 !important; }
+  a[href]:after { content: ""; }
+}

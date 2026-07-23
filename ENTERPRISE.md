@@ -398,6 +398,19 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **39/39 API-Checks**; Umbuchung persistiert end-to-end
   (Elena Popescu → Marko Novak, Status „unterwegs").
 
+### 35. Geschäftsbericht (Executive Summary, druckbar) + CSS-Variablen-Fix
+- **Capstone-Deliverable**: Seite `/bericht` („📄 Bericht") bündelt die Kern-Analytik
+  auf **einer board-tauglichen Seite** — Kennzahlen (Unternehmen, Umsatz, EBITDA,
+  MRR inkl. YoY), **Übernahme-Empfehlung** (Score/ROI/DD), **Kundenkonzentration**
+  (Risiko) und **Team-Auslastung**. Reine Frontend-Aggregation vorhandener Endpunkte.
+- **Drucken/PDF**: Button `window.print()` + `@media print` (Sidebar/Buttons aus,
+  weißes Papier, druck-eigener Titel + „vertraulich"-Fußzeile). Per Browser als PDF
+  speicherbar.
+- **Qualitäts-Fix**: 5 Stellen nutzten die **undefinierte** CSS-Variable
+  `var(--warning)` statt `var(--warn)` → Warn-Farben (Rahmen/Balken) rendern jetzt
+  korrekt orange.
+- Verifiziert: Bildschirm- **und** Druckansicht per Playwright (`media=print`).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
