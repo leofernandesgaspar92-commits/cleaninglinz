@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "migrate": "node src/core/migrate.js",
+    "test:signals": "node scripts/test-signals.mjs",
     "run": "node src/cli.js",
     "start": "node src/scheduler.js",
     "loop": "node src/loop.js 0 60",

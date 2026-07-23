@@ -426,6 +426,18 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   emittiert, **analyst reagiert** (`reaktion:revenue_concentration`), Dedup greift;
   volle Loop-Iteration meldet „1 Betriebssignal + 1 Event-Reaktion" (AGI-Dashboard).
 
+### 37. Funktionstests der AGI-Signal-Pipeline + CI-Anbindung
+- Das AGI-System wurde in der CI bisher **nur syntaktisch** geprüft. Neu:
+  **`agents/scripts/test-signals.mjs`** (`npm run test:signals`) stellt vier
+  auslösende Zustände her (5 Fehler/24 h, auslaufender Vertrag, Klumpenrisiko,
+  unbesetzter Job) und prüft, dass `scanSignals()` **alle vier emittiert**, der
+  **Dedup** beim 2. Scan greift, der **Reaktor** jedes Signal den passenden
+  Agenten zuweist (Klumpenrisiko → analyst) und alle Events als bearbeitet
+  markiert werden. **12/12 grün**.
+- **CI-Erweiterung**: Der Agents-Job „AGI-Team (Syntax + Signal-Tests)" bekommt
+  einen **PostgreSQL-Service**, migriert **Leco (Schema+Seed) + AGI-Schema** und
+  führt den Signal-Test aus – bei jedem Push/PR.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

@@ -71,15 +71,40 @@ jobs:
         run: npm run build
 
   agents:
-    name: AGI-Team (Syntax-Check)
+    name: AGI-Team (Syntax + Signal-Tests)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: leco
+          POSTGRES_PASSWORD: leco
+          POSTGRES_DB: leco
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U leco"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://leco:leco@localhost:5432/leco
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - name: Install
+      - name: Install (agents)
         working-directory: agents
         run: npm ci
       - name: Syntax-Check
         working-directory: agents
         run: for f in $(find src -name '*.js'); do node --check "$f"; done
+      - name: Install (backend, für Migration)
+        working-directory: backend
+        run: npm ci
+      - name: Leco-Schema + Seed migrieren
+        working-directory: backend
+        run: node src/lib/migrate.js --reset --seed
+      - name: AGI-Schema migrieren
+        working-directory: agents
+        run: node src/core/migrate.js
+      - name: Signal→Reaktion-Pipeline testen
+        working-directory: agents
+        run: node scripts/test-signals.mjs
