@@ -17,6 +17,7 @@ import { runAgent } from './core/agent-runner.js';
 import { applyApprovedChanges } from './core/executor.js';
 import { applyPolicy, isAutoApprove } from './core/policy.js';
 import { reactToEvents } from './reactor.js';
+import { scanSignals } from './signals.js';
 import { Knowledge, LoopLog, Approvals } from './core/comms.js';
 import { isLive } from './core/llm.js';
 import { pool } from './core/db.js';
@@ -27,8 +28,11 @@ export async function iterate(n) {
   const cycle = await LoopLog.start(n);
   const t0 = Date.now();
 
-  // 0a) Reaktiv: zuerst auf offene kritische Events reagieren (z.B. bug_detected).
-  const reaction = await reactToEvents({ max: 5 });
+  // 0a) Reale Leco-Betriebssignale erfassen (Fehler, Verträge, Klumpenrisiko,
+  //     unbesetzte Einsätze) und als Events einspeisen …
+  const signals = await scanSignals();
+  // … dann reaktiv auf offene kritische Events reagieren (inkl. dieser Signale).
+  const reaction = await reactToEvents({ max: 8 });
 
   // 0b) Aus vergangenen Runden lernen (Memory) – damit sich die Schleife verbessert.
   const priorLearnings = await Knowledge.read({ topic: WF, limit: 5 });
@@ -69,7 +73,8 @@ export async function iterate(n) {
 
   // 5) LEARN – Zyklus-Erkenntnis festhalten (fließt in die nächste Runde ein).
   const learning =
-    `Iteration ${n}: ${reaction.reacted} Event-Reaktion(en), analysiert (5 Perspektiven), 1 Verbesserung priorisiert, `
+    `Iteration ${n}: ${signals.emitted.length} Betriebssignal(e) (${signals.emitted.join(',') || '—'}), `
+    + `${reaction.reacted} Event-Reaktion(en), analysiert (5 Perspektiven), 1 Verbesserung priorisiert, `
     + `${improve.toolCalls.some((t) => t.tool === 'propose_code_change') ? '1 Code-Vorschlag erstellt' : 'kein Vorschlag'}, `
     + `${autoApproved.length} auto-genehmigt, ${applied.length} ausgeführt, ${reverted.length} zurückgerollt.`;
   await Knowledge.write({

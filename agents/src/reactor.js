@@ -25,6 +25,22 @@ const TRIGGERS = {
   execute_reverted: [
     { agent: 'developer', task: (e) => `Eine Änderung an ${e.payload?.path} ist bei der Verifikation gescheitert (${e.payload?.reason}) und wurde zurückgerollt. Analysiere die Ursache und erstelle einen korrigierten Code-Vorschlag.` },
   ],
+
+  // --- Reale Leco-Betriebssignale (vom Signal-Scanner, src/signals.js) --------
+  errors_spike: [
+    { agent: 'developer', task: (e) => `Fehler-Spitze im Betrieb: ${JSON.stringify(e.payload)}. Finde die wahrscheinliche Ursache und schlage einen Fix vor.` },
+    { agent: 'qa', task: (e) => `Fehler-Spitze: ${JSON.stringify(e.payload)}. Welche Tests fehlen, um das künftig früh abzufangen?` },
+  ],
+  contract_expiring: [
+    { agent: 'finance', task: (e) => `Auslaufende Verträge (${e.payload?.count}): ${JSON.stringify(e.payload?.items)}. Priorisiere Verlängerungen zur Umsatzsicherung.` },
+    { agent: 'operations', task: (e) => `Auslaufende Verträge (${e.payload?.count}): plane die rechtzeitige Kundenansprache zur Verlängerung.` },
+  ],
+  revenue_concentration: [
+    { agent: 'analyst', task: (e) => `Klumpenrisiko: größter Kunde ${e.payload?.top_customer} = ${e.payload?.top_share_pct}% des Vertragsumsatzes. Empfehle konkrete Diversifikationsmaßnahmen.` },
+  ],
+  jobs_unassigned: [
+    { agent: 'operations', task: (e) => `${e.payload?.unassigned} offene Einsätze sind unbesetzt. Schlage eine sinnvolle Zuteilung vor (Auslastung/Skills beachten).` },
+  ],
 };
 
 // Verarbeitet alle offenen, relevanten Events (max. je Aufruf begrenzt).

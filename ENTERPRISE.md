@@ -411,6 +411,21 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   korrekt orange.
 - Verifiziert: Bildschirm- **und** Druckansicht per Playwright (`media=print`).
 
+### 36. AGI-Reaktor an echte Leco-Betriebssignale angebunden (Kern der Vision)
+- **Bisher** reagierte die autonome Schleife nur auf simulierte Events. Jetzt speist
+  ein **Signal-Scanner** (`agents/src/signals.js`) reale Betriebsdaten aus der
+  (gemeinsamen) Leco-DB in den Event Bus ein:
+  **`errors_spike`** (≥ 5 Fehler/24 h), **`contract_expiring`** (≤ 30 Tage),
+  **`revenue_concentration`** (größter Kunde > 40 %), **`jobs_unassigned`**.
+  **Dedup** über `SIGNAL_DEDUP_HOURS` (Standard 12 h) verhindert Spam bei
+  dauerhaften Zuständen.
+- **Reaktor-Trigger** (`reactor.js`) für die neuen Typen: developer/qa, finance/
+  operations, analyst, operations. **`loop.js`** ruft `scanSignals()` **vor**
+  `reactToEvents()` und protokolliert die Signale in der Zyklus-Erkenntnis.
+- Verifiziert: Seed → **`revenue_concentration`** (Ars Electronica Center 66,7 %)
+  emittiert, **analyst reagiert** (`reaktion:revenue_concentration`), Dedup greift;
+  volle Loop-Iteration meldet „1 Betriebssignal + 1 Event-Reaktion" (AGI-Dashboard).
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,
