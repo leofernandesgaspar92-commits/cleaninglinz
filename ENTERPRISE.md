@@ -473,6 +473,16 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
   Backend** – ohne Token `401`, mit Token: Aufträge laden, **Check-in 200/in_arbeit,
   Check-out 200/erledigt**. Neuer **CI-Job „Mobile"** (Syntax + Auth-Core-Test).
 
+### 41. Vertrag-verlängern-Aktion – schließt die Umsatzsicherung
+- Die **Vertrags-Watch** (Nr. 19) *warnte* vor auslaufenden Verträgen, aber man
+  konnte nicht **handeln**. Neu: **`POST /api/contracts/:id/renew`** `{months=12}`
+  schiebt `end_date` um N Monate und setzt `status='aktiv'` (Schreibrecht via
+  `writeRoles`).
+- **Frontend**: Button **„🔁 +12 M"** je Vertrag in der Kundenliste (nur ab
+  „manager"); aktualisiert Konzentration & Feed.
+- Verifiziert: **47/47 API-Checks** (2026-01-31 → 2027-01-31, `aktiv`); UI-Screenshot.
+  Damit ist der Kreis **Warnung → Verlängerung** geschlossen.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

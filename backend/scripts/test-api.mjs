@@ -116,6 +116,13 @@ if (contractId) cleanup.unshift(['/contracts/', contractId]); // zuerst löschen
 const cuContracts1 = await get(`/customers/${customerId}/contracts`);
 check('Vertrag erscheint beim Kunden', Array.isArray(cuContracts1.body) && cuContracts1.body.length === 1);
 
+// Vertrag verlängern: Enddatum vorher setzen, dann +12 Monate
+await patch('/contracts/' + contractId, { end_date: '2026-01-31', status: 'laeuft_aus' });
+const renew = await post(`/contracts/${contractId}/renew`, { months: 12 });
+check('Vertrag verlängert (+12 Monate, aktiv)',
+  renew.status === 200 && renew.body.status === 'aktiv' && renew.body.end_date.slice(0, 10) === '2027-01-31',
+  `neues Ende=${renew.body.end_date?.slice(0, 10)}, status=${renew.body.status}`);
+
 // 4) Mitarbeiter: CREATE → PATCH → DELETE → 404
 const emCreate = await post('/employees', {
   company_id: companyId, first_name: 'Test', last_name: `Kraft ${tag}`,

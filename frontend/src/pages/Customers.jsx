@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import { api, euro, downloadAuthed } from '../lib/api.js';
+import { canWrite } from '../lib/auth.js';
 import { toast } from '../components/Toast.jsx';
 
 const TYPE_LABEL = {
@@ -43,6 +44,16 @@ export default function Customers() {
       setContracts((c) => ({ ...c, [id]: rows }));
     }
   }
+
+  async function renew(customerId, contract) {
+    try {
+      const updated = await api.post(`/contracts/${contract.id}/renew`, { months: 12 });
+      setContracts((c) => ({ ...c, [customerId]: c[customerId].map((x) => (x.id === contract.id ? updated : x)) }));
+      toast.success('Vertrag verlängert', `„${contract.title}" bis ${updated.end_date?.slice(0, 10)}.`);
+      api.get('/dashboard/customer-concentration').then(setConc).catch(() => {});
+    } catch (e) { toast.error('Nicht verlängert', e.message); }
+  }
+  const writable = canWrite();
 
   const filtered = customers.filter((c) =>
     `${c.name} ${c.address} ${c.district}`.toLowerCase().includes(q.toLowerCase()));
@@ -131,6 +142,10 @@ export default function Customers() {
                                   <td>
                                     {ct.end_date?.slice(0, 10) || '–'}
                                     {ct.end_date && <a href={`/api/calendar/contract/${ct.id}.ics`} title="Frist in Kalender" style={{ marginLeft: 6 }}>📅</a>}
+                                    {writable && ct.status !== 'beendet' && (
+                                      <button title="Um 12 Monate verlängern" style={{ marginLeft: 8, fontSize: '.72rem', padding: '.1rem .4rem' }}
+                                        onClick={(e) => { e.stopPropagation(); renew(c.id, ct); }}>🔁 +12 M</button>
+                                    )}
                                   </td>
                                 </tr>
                               ))}
