@@ -163,6 +163,18 @@ check('Dashboard /jobs (Einsatzplanung, angereichert)',
   && dJobs.body.every((j) => 'customer_name' in j && 'status' in j && 'employee_name' in j),
   `einsaetze=${dJobs.body.length}`);
 
+// Zuweisungs-Empfehlung: für den AEC-Einsatz sollte die Person, die das Gebäude
+// kennt (Elena Popescu kennt „Ars Electronica Center"), oben stehen.
+const aecJob = (dJobs.body || []).find((j) => j.customer_name === 'Ars Electronica Center');
+if (aecJob) {
+  const cand = await get(`/dashboard/jobs/${aecJob.id}/candidates`);
+  const top = cand.body?.candidates?.[0];
+  check('Zuweisungs-Empfehlung: Gebäudekenner zuerst',
+    cand.status === 200 && top && top.knows_building === true
+    && cand.body.candidates.every((c, i, a) => i === 0 || (a[i - 1].knows_building ? 1 : 0) >= (c.knows_building ? 1 : 0)),
+    `top=${top?.name} (kennt=${top?.knows_building}, offen=${top?.open_jobs})`);
+}
+
 const dConc = await get('/dashboard/customer-concentration');
 const topC = dConc.body?.customers?.[0];
 check('Dashboard /customer-concentration (Klumpenrisiko)',

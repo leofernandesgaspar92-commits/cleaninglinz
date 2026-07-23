@@ -36,6 +36,17 @@ export default function Jobs() {
     catch (e) { toast.error('Nicht gespeichert', e.message); load(); }
   }
 
+  // Beste:n Mitarbeiter:in vorschlagen: Gebäudekenntnis vor Auslastung.
+  async function suggest(job) {
+    try {
+      const { candidates } = await api.get(`/dashboard/jobs/${job.id}/candidates`);
+      const best = candidates[0];
+      if (!best) return toast.info('Kein Vorschlag', 'Keine aktiven Mitarbeiter.');
+      const reason = best.knows_building ? 'kennt das Gebäude' : `geringste Auslastung (${best.open_jobs} offen)`;
+      await patch(job.id, { employee_id: best.id }, `${best.name} zugewiesen – ${reason}.`);
+    } catch (e) { toast.error('Kein Vorschlag', e.message); }
+  }
+
   const open = jobs.filter((j) => j.status !== 'erledigt');
   const done = jobs.filter((j) => j.status === 'erledigt');
   const unassigned = open.filter((j) => !j.employee_id).length;
@@ -68,11 +79,17 @@ export default function Jobs() {
                 <td>{j.title || '–'}</td>
                 <td>
                   {writable ? (
-                    <select value={j.employee_id || ''} onChange={(e) => patch(j.id, { employee_id: e.target.value || null }, 'Zuweisung gespeichert')}
-                      style={{ maxWidth: 180, borderColor: j.employee_id ? undefined : 'var(--warn)' }}>
-                      <option value="">— unbesetzt —</option>
-                      {employees.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
-                    </select>
+                    <span style={{ display: 'flex', gap: '.3rem', alignItems: 'center' }}>
+                      <select value={j.employee_id || ''} onChange={(e) => patch(j.id, { employee_id: e.target.value || null }, 'Zuweisung gespeichert')}
+                        style={{ maxWidth: 170, borderColor: j.employee_id ? undefined : 'var(--warn)' }}>
+                        <option value="">— unbesetzt —</option>
+                        {employees.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
+                      </select>
+                      {j.status !== 'erledigt' && (
+                        <button title="Beste:n Mitarbeiter:in vorschlagen (Gebäudekenntnis + Auslastung)"
+                          style={{ padding: '.2rem .4rem' }} onClick={() => suggest(j)}>💡</button>
+                      )}
+                    </span>
                   ) : (j.employee_name || <span className="badge geplant">unbesetzt</span>)}
                 </td>
                 <td>

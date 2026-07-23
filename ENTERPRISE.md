@@ -483,6 +483,16 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **47/47 API-Checks** (2026-01-31 → 2027-01-31, `aktiv`); UI-Screenshot.
   Damit ist der Kreis **Warnung → Verlängerung** geschlossen.
 
+### 42. Skill-Matrix-basierte Zuweisungs-Empfehlung (hyper-lokal für Linz)
+- Die **Linz-Skill-Matrix** (`employees.known_buildings` – „welche Gebäude wer kennt")
+  wurde bisher nur angezeigt, nie **genutzt**. Neu: **`GET /api/dashboard/jobs/:id/
+  candidates`** rankt aktive Mitarbeiter nach **Gebäudekenntnis** (`known_buildings`
+  enthält den Kundennamen, JSONB `@>`) und dann **geringster Auslastung** (offene Jobs).
+- **Frontend**: **💡-Button** je Einsatz auf der Einsatzplanung-Seite weist die/den
+  Beste:n zu; der Toast nennt den Grund („kennt das Gebäude" / „geringste Auslastung").
+- Verifiziert: **48/48 API-Checks**; für den Ars-Electronica-Center-Einsatz steht
+  **Elena Popescu** (kennt das Gebäude) vor Marko Novak; UI-Toast bestätigt den Grund.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

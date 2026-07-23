@@ -229,6 +229,32 @@ router.get('/jobs', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Zuweisungs-Empfehlung für einen Einsatz: aktive Mitarbeiter, gerankt nach
+// Gebäudekenntnis (Linz-Skill-Matrix: known_buildings) und dann geringster
+// Auslastung (offene Jobs). Nutzt die sonst nur angezeigte Skill-Matrix aktiv.
+router.get('/jobs/:id/candidates', async (req, res, next) => {
+  try {
+    const job = await one(
+      `SELECT j.id, c.name AS customer_name FROM jobs j JOIN customers c ON c.id = j.customer_id WHERE j.id = $1`,
+      [req.params.id]);
+    if (!job) return res.status(404).json({ error: 'Einsatz nicht gefunden' });
+    const rows = await query(`
+      SELECT e.id, e.first_name || ' ' || e.last_name AS name,
+             (e.known_buildings @> to_jsonb($1::text)) AS knows_building,
+             COUNT(j2.id) FILTER (WHERE j2.status IN ('geplant','unterwegs','in_arbeit')) AS open_jobs
+      FROM employees e
+      LEFT JOIN jobs j2 ON j2.employee_id = e.id
+      WHERE e.status = 'aktiv'
+      GROUP BY e.id, e.first_name, e.last_name, e.known_buildings
+      ORDER BY (e.known_buildings @> to_jsonb($1::text)) DESC, open_jobs ASC, e.last_name`,
+      [job.customer_name]);
+    res.json({
+      job_id: job.id, customer_name: job.customer_name,
+      candidates: rows.map((r) => ({ id: r.id, name: r.name, knows_building: r.knows_building, open_jobs: Number(r.open_jobs) })),
+    });
+  } catch (e) { next(e); }
+});
+
 // Kunden-Umsatzkonzentration (Klumpenrisiko)
 router.get('/customer-concentration', async (req, res, next) => {
   try { res.json(await computeCustomerConcentration()); } catch (e) { next(e); }
