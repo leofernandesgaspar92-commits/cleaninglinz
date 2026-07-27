@@ -6,6 +6,7 @@ const STATUS_COLOR = { geplant: '#d29922', unterwegs: '#2f81f7', in_arbeit: '#3f
 
 export default function JobListScreen({ onOpen, onLogout }) {
   const [jobs, setJobs] = useState([]);
+  const [linked, setLinked] = useState(true);
   const [pending, setPending] = useState(0);
   const [err, setErr] = useState(null);
 
@@ -13,7 +14,9 @@ export default function JobListScreen({ onOpen, onLogout }) {
     try {
       await flushQueue();
       setPending(await queueSize());
-      setJobs(await apiGet('/dashboard/jobs')); // angereichert: Kundenname
+      const res = await apiGet('/dashboard/my-jobs'); // nur eigene Einsätze
+      setJobs(res.jobs || []);
+      setLinked(res.linked !== false);
       setErr(null);
     } catch (e) { setErr('Offline – zeige zuletzt geladene Aufträge.'); }
   }, []);
@@ -27,6 +30,7 @@ export default function JobListScreen({ onOpen, onLogout }) {
         {onLogout && <TouchableOpacity onPress={onLogout}><Text style={styles.logout}>Abmelden</Text></TouchableOpacity>}
       </View>
       {pending > 0 && <Text style={styles.pending}>⏳ {pending} Aktion(en) warten auf Sync</Text>}
+      {!linked && <Text style={styles.pending}>Kein Mitarbeiter-Profil verknüpft – bitte Admin kontaktieren.</Text>}
       {err && <Text style={styles.err}>{err}</Text>}
       <FlatList
         data={jobs}

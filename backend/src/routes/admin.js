@@ -94,8 +94,20 @@ router.get('/overview', async (req, res, next) => {
 router.get('/users', async (req, res, next) => {
   try {
     res.json(await query(
-      `SELECT id, email, full_name, role, mfa_enabled, provider, last_login_at, failed_logins, locked_until
-       FROM users ORDER BY created_at`));
+      `SELECT u.id, u.email, u.full_name, u.role, u.mfa_enabled, u.provider, u.last_login_at,
+              u.failed_logins, u.locked_until, u.employee_id,
+              e.first_name || ' ' || e.last_name AS employee_name
+       FROM users u LEFT JOIN employees e ON e.id = u.employee_id
+       ORDER BY u.created_at`));
+  } catch (e) { next(e); }
+});
+
+// Login-Nutzer mit einem Mitarbeiter verknüpfen (für „meine Einsätze").
+router.patch('/users/:id/employee', async (req, res, next) => {
+  try {
+    const u = await one('UPDATE users SET employee_id = $2 WHERE id = $1 RETURNING id, email, employee_id',
+      [req.params.id, req.body?.employee_id || null]);
+    res.json(u || { error: 'nicht gefunden' });
   } catch (e) { next(e); }
 });
 router.patch('/users/:id/role', async (req, res, next) => {

@@ -493,6 +493,19 @@ Endpunkte: `POST /api/auth/register|login`, `GET /api/auth/me`,
 - Verifiziert: **48/48 API-Checks**; für den Ars-Electronica-Center-Einsatz steht
   **Elena Popescu** (kennt das Gebäude) vor Marko Novak; UI-Toast bestätigt den Grund.
 
+### 43. Nutzer↔Mitarbeiter-Verknüpfung – „Meine Aufträge" in der Feld-App
+- Semantische Lücke: Die Feld-App zeigte unter **„Meine Aufträge" alle** Jobs, weil ein
+  Login-Konto (`users`) nie mit einem **Mitarbeiter-Profil** (`employees`) verbunden war.
+- **Datenmodell**: `users.employee_id UUID REFERENCES employees(id) ON DELETE SET NULL`
+  (additiv/idempotent in `db/enterprise.sql`).
+- **Admin-UI**: In **„Benutzer & Rollen"** verknüpft ein **Mitarbeiter-Dropdown** je Konto
+  (→ `PATCH /api/admin/users/:id/employee`); `GET /admin/users` liefert `employee_name` mit.
+- **Feld-App**: neuer **`GET /api/dashboard/my-jobs`** → `{ linked, jobs }` – nur eigene
+  Einsätze (`status <> 'abgebrochen'`). Ohne Verknüpfung `linked:false` (defensiver Default,
+  kein Fehler); die App zeigt dann den Hinweis „Kein Mitarbeiter-Profil verknüpft".
+- Verifiziert: **51/51 API-Checks** (2 neu: eigener Job sichtbar, fremder unsichtbar,
+  Verknüpfung lösen → `linked:false`); Frontend-Build grün.
+
 ### 7. Observability, API-Dokumentation & CI/CD
 - **Prometheus-Metriken** unter `GET /metrics`: Betrieb (Request-Zähler,
   Latenz-Histogramm, RSS, Uptime) **und Geschäft** (`leco_revenue_eur`,

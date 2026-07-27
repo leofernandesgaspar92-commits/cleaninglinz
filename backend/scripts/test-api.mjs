@@ -175,6 +175,35 @@ if (aecJob) {
     `top=${top?.name} (kennt=${top?.knows_building}, offen=${top?.open_jobs})`);
 }
 
+// 5b) „Meine Aufträge": Login-Nutzer -> Mitarbeiter verknüpfen, Job zuweisen,
+//     /dashboard/my-jobs liefert nur eigene Einsätze.
+const myEm = await post('/employees', {
+  company_id: companyId, first_name: 'Feld', last_name: `Techniker ${tag}`,
+  role: 'reinigungskraft', status: 'aktiv',
+});
+const myEmId = myEm.body.id;
+const meUser = ((await get('/admin/users')).body || []).find((u) => u.email === email);
+const linkRes = await patch(`/admin/users/${meUser.id}/employee`, { employee_id: myEmId });
+check('Nutzer mit Mitarbeiter verknüpfen', linkRes.status === 200 && linkRes.body.employee_id === myEmId);
+
+const myJob = await post('/jobs', { customer_id: customerId, employee_id: myEmId, title: 'Mein Einsatz', status: 'geplant' });
+const otherJob = await post('/jobs', { customer_id: customerId, title: 'Fremder Einsatz', status: 'geplant' });
+const mine = await get('/dashboard/my-jobs');
+check('Dashboard /my-jobs: verknüpft + nur eigene Einsätze',
+  mine.status === 200 && mine.body.linked === true
+  && mine.body.jobs.some((j) => j.id === myJob.body.id)
+  && !mine.body.jobs.some((j) => j.id === otherJob.body.id),
+  `linked=${mine.body.linked}, eigene=${mine.body.jobs?.length}`);
+
+// Verknüpfung wieder lösen -> linked:false
+await patch(`/admin/users/${meUser.id}/employee`, { employee_id: null });
+const unlinked = await get('/dashboard/my-jobs');
+check('Dashboard /my-jobs: ohne Verknüpfung linked:false',
+  unlinked.status === 200 && unlinked.body.linked === false && unlinked.body.jobs.length === 0);
+
+for (const id of [myJob.body.id, otherJob.body.id]) if (id) cleanup.unshift(['/jobs/', id]);
+if (myEmId) cleanup.unshift(['/employees/', myEmId]);
+
 const dConc = await get('/dashboard/customer-concentration');
 const topC = dConc.body?.customers?.[0];
 check('Dashboard /customer-concentration (Klumpenrisiko)',

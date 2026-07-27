@@ -11,6 +11,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until   TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at  TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS provider       TEXT NOT NULL DEFAULT 'local'; -- local|google|azure
 ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_sub   TEXT;                            -- SSO-Subjekt-ID
+-- Verknüpfung Login-Nutzer -> Mitarbeiter (für „meine Einsätze" in der Feld-App)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id    UUID REFERENCES employees(id) ON DELETE SET NULL;
 
 -- --- Audit-Log: jeder sicherheitsrelevante Vorgang -------------------------
 CREATE TABLE IF NOT EXISTS audit_log (

@@ -229,6 +229,22 @@ router.get('/jobs', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// „Meine Einsätze": Jobs des Mitarbeiters, der mit dem angemeldeten Nutzer
+// verknüpft ist (users.employee_id). Für die Feld-App („Meine Aufträge").
+router.get('/my-jobs', async (req, res, next) => {
+  try {
+    const u = await one('SELECT employee_id FROM users WHERE id = $1', [req.user.sub]);
+    if (!u || !u.employee_id) return res.json({ linked: false, jobs: [] });
+    const jobs = await query(`
+      SELECT j.id, j.title, j.status, j.scheduled_at,
+             c.name AS customer_name, c.district
+      FROM jobs j JOIN customers c ON c.id = j.customer_id
+      WHERE j.employee_id = $1 AND j.status <> 'abgebrochen'
+      ORDER BY j.scheduled_at NULLS LAST`, [u.employee_id]);
+    res.json({ linked: true, jobs });
+  } catch (e) { next(e); }
+});
+
 // Zuweisungs-Empfehlung für einen Einsatz: aktive Mitarbeiter, gerankt nach
 // Gebäudekenntnis (Linz-Skill-Matrix: known_buildings) und dann geringster
 // Auslastung (offene Jobs). Nutzt die sonst nur angezeigte Skill-Matrix aktiv.

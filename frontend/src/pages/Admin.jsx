@@ -6,6 +6,7 @@ import { toast } from '../components/Toast.jsx';
 
 export default function Admin({ user }) {
   const [data, setData] = useState({ overview: null, audit: [], errors: [], users: [], heatmap: null, notif: { status: {}, items: [] } });
+  const [employees, setEmployees] = useState([]);
   const [err, setErr] = useState(null);
 
   const load = useCallback(async () => {
@@ -21,6 +22,12 @@ export default function Admin({ user }) {
       setData({ overview, audit, errors, users, heatmap, notif }); setErr(null);
     } catch (e) { setErr(e.message); }
   }, []);
+  useEffect(() => { authApi.get('/employees').then(setEmployees).catch(() => {}); }, []);
+
+  async function linkEmployee(userId, employeeId) {
+    await authApi.patch(`/admin/users/${userId}/employee`, { employee_id: employeeId || null });
+    load();
+  }
 
   async function testNotify() {
     await authApi.post('/admin/notify/test');
@@ -93,7 +100,7 @@ export default function Admin({ user }) {
 
           <h3 style={{ marginTop: '1rem' }}>👥 Benutzer & Rollen</h3>
           <div className="card" style={{ padding: '.2rem' }}>
-            <table><thead><tr><th>E-Mail</th><th>MFA</th><th>Rolle</th></tr></thead>
+            <table><thead><tr><th>E-Mail</th><th>MFA</th><th>Rolle</th><th>Mitarbeiter</th></tr></thead>
               <tbody>
                 {data.users.map((u) => (
                   <tr key={u.id}>
@@ -104,6 +111,14 @@ export default function Admin({ user }) {
                         <option value="mitarbeiter">mitarbeiter</option>
                         <option value="manager">manager</option>
                         <option value="admin">admin</option>
+                      </select>
+                    </td>
+                    <td title="Verknüpft das Login mit einem Mitarbeiter-Profil – Basis für „Meine Aufträge“ in der Feld-App.">
+                      <select value={u.employee_id || ''} onChange={(e) => linkEmployee(u.id, e.target.value)} style={{ width: 'auto' }}>
+                        <option value="">— nicht verknüpft —</option>
+                        {employees.map((e) => (
+                          <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>
+                        ))}
                       </select>
                     </td>
                   </tr>
